@@ -288,4 +288,65 @@ describe('handleWalkthroughAnswer', () => {
     expect(result.updates).toBeUndefined();
     expect(result.message).toContain('Did you sign the application?');
   });
+
+  it('responds to Spanish greetings in Spanish mode', () => {
+    const result = handleCaseworkerTurn(
+      {
+        formSchema: saws2PlusForm.schema,
+        applicationProfile: {},
+        documentStatusMap: {},
+        selectedDemoFormId: saws2PlusForm.id,
+        currentFieldId: 'applicant_name',
+        currentPage: 1,
+        language: 'es',
+      },
+      'hola'
+    );
+
+    expect(result.message).toContain('Hola.');
+    expect(result.message).toContain('Cual es su nombre legal completo?');
+  });
+
+  it('answers Spanish benefit questions with Spanish text', () => {
+    const result = handleCaseworkerTurn(
+      {
+        formSchema: saws2PlusForm.schema,
+        applicationProfile: {},
+        documentStatusMap: {},
+        selectedDemoFormId: saws2PlusForm.id,
+        currentFieldId: 'programs_requested',
+        currentPage: 1,
+        language: 'es',
+      },
+      'que beneficios puedo pedir?'
+    );
+
+    expect(result.updates).toBeUndefined();
+    expect(result.message).toContain('programas de beneficios');
+    expect(result.message).toContain('CalFresh');
+  });
+
+  it('updates answers from Spanish correction language', () => {
+    const result = handleCaseworkerTurn(
+      {
+        formSchema: saws2PlusForm.schema,
+        applicationProfile: {
+          phone: entry('phone', '555-000-0000'),
+        },
+        documentStatusMap: {},
+        selectedDemoFormId: saws2PlusForm.id,
+        currentFieldId: 'date_of_birth',
+        currentPage: 1,
+        language: 'es',
+      },
+      'cambiar mi telefono a 555-123-4567'
+    );
+
+    expect(result.updates?.[0]).toMatchObject({
+      fieldId: 'phone',
+      value: '555-123-4567',
+      status: 'complete',
+    });
+    expect(result.message).toContain('Actualice');
+  });
 });

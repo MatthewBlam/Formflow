@@ -37,7 +37,25 @@ export function AssistantPanel() {
     const issues = runChecks(state);
     state.setCheckIssues(issues);
     state.addChatMessage(
-      makeMessage('assistant', `I checked your answers so far. ${getCheckSummary(issues)}`)
+      makeMessage(
+        'assistant',
+        state.language === 'es'
+          ? `Revise sus respuestas hasta ahora. ${getCheckSummary(issues)}`
+          : `I checked your answers so far. ${getCheckSummary(issues)}`
+      )
+    );
+  }
+
+  function toggleLanguage() {
+    const nextLanguage = state.language === 'es' ? 'en' : 'es';
+    state.setLanguage(nextLanguage);
+    state.addChatMessage(
+      makeMessage(
+        'assistant',
+        nextLanguage === 'es'
+          ? 'Ahora respondere en espanol. Puede escribir sus preguntas o respuestas en espanol.'
+          : 'I will respond in English now. You can type your questions or answers in English.'
+      )
     );
   }
 
@@ -62,16 +80,28 @@ export function AssistantPanel() {
               Ask questions, answer fields, or ask for help at any point.
             </p>
           </div>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={checkAnswers}
-            disabled={!state.formSchema}
-            className="rounded-md"
-          >
-            Check My Responses
-          </Button>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={toggleLanguage}
+              disabled={!state.formSchema}
+              className="rounded-md"
+            >
+              {state.language === 'es' ? 'English' : 'Español'}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={checkAnswers}
+              disabled={!state.formSchema}
+              className="rounded-md"
+            >
+              Check My Responses
+            </Button>
+          </div>
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-auto">
