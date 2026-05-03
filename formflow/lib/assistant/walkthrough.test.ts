@@ -22,6 +22,7 @@ describe('handleWalkthroughAnswer', () => {
         documentStatusMap: {},
         selectedDemoFormId: saws2PlusForm.id,
         currentFieldId: 'programs_requested',
+        currentPage: 1,
       },
       'CalFresh'
     );
@@ -49,6 +50,7 @@ describe('handleWalkthroughAnswer', () => {
         documentStatusMap: {},
         selectedDemoFormId: saws2PlusForm.id,
         currentFieldId: 'signature_date',
+        currentPage: 7,
       },
       '05/02/2026'
     );
@@ -65,6 +67,7 @@ describe('handleWalkthroughAnswer', () => {
         documentStatusMap: {},
         selectedDemoFormId: saws2PlusForm.id,
         currentFieldId: 'applicant_name',
+        currentPage: 1,
       },
       'hi'
     );
@@ -82,6 +85,7 @@ describe('handleWalkthroughAnswer', () => {
         documentStatusMap: {},
         selectedDemoFormId: saws2PlusForm.id,
         currentFieldId: 'applicant_name',
+        currentPage: 1,
       },
       'why do you need my name?'
     );
@@ -99,6 +103,7 @@ describe('handleWalkthroughAnswer', () => {
         documentStatusMap: {},
         selectedDemoFormId: saws2PlusForm.id,
         currentFieldId: 'programs_requested',
+        currentPage: 1,
       },
       'can you tell me which benefits I can apply for?'
     );
@@ -117,6 +122,7 @@ describe('handleWalkthroughAnswer', () => {
         documentStatusMap: {},
         selectedDemoFormId: saws2PlusForm.id,
         currentFieldId: 'programs_requested',
+        currentPage: 1,
       },
       'food help money'
     );
@@ -134,11 +140,96 @@ describe('handleWalkthroughAnswer', () => {
         documentStatusMap: {},
         selectedDemoFormId: saws2PlusForm.id,
         currentFieldId: 'applicant_name',
+        currentPage: 1,
       },
       'papers need'
     );
 
     expect(result.updates).toBeUndefined();
     expect(result.message).toContain('document');
+  });
+
+  it('uses the current PDF page when answering page-context questions', () => {
+    const result = handleCaseworkerTurn(
+      {
+        formSchema: saws2PlusForm.schema,
+        applicationProfile: {},
+        documentStatusMap: {},
+        selectedDemoFormId: saws2PlusForm.id,
+        currentFieldId: 'programs_requested',
+        currentPage: 3,
+      },
+      'what fields are on this page?'
+    );
+
+    expect(result.updates).toBeUndefined();
+    expect(result.message).toContain('On page 3');
+    expect(result.message).toContain('Are you working right now?');
+    expect(result.message).toContain('How much money do you earn from work each month before taxes?');
+  });
+
+  it('uses explicit page references when answering form questions', () => {
+    const result = handleCaseworkerTurn(
+      {
+        formSchema: saws2PlusForm.schema,
+        applicationProfile: {},
+        documentStatusMap: {},
+        selectedDemoFormId: saws2PlusForm.id,
+        currentFieldId: 'programs_requested',
+        currentPage: 1,
+      },
+      'on page three what income information is there?'
+    );
+
+    expect(result.updates).toBeUndefined();
+    expect(result.message).toContain('How much money do you earn from work each month before taxes?');
+    expect(result.message).toContain('Related section: Income and work');
+  });
+
+  it('updates a saved answer when the user corrects it by field name', () => {
+    const result = handleCaseworkerTurn(
+      {
+        formSchema: saws2PlusForm.schema,
+        applicationProfile: {
+          applicant_name: entry('applicant_name', 'Old Name'),
+        },
+        documentStatusMap: {},
+        selectedDemoFormId: saws2PlusForm.id,
+        currentFieldId: 'birth_date',
+        currentPage: 1,
+      },
+      'change my name to Maria Garcia'
+    );
+
+    expect(result.updates?.[0]).toMatchObject({
+      fieldId: 'applicant_name',
+      value: 'Maria Garcia',
+      status: 'complete',
+    });
+    expect(result.nextFieldId).toBe('applicant_name');
+    expect(result.message).toContain('Updated');
+  });
+
+  it('treats mistake language as an answer correction instead of a check request', () => {
+    const result = handleCaseworkerTurn(
+      {
+        formSchema: saws2PlusForm.schema,
+        applicationProfile: {
+          phone: entry('phone', '555-000-0000'),
+        },
+        documentStatusMap: {},
+        selectedDemoFormId: saws2PlusForm.id,
+        currentFieldId: 'birth_date',
+        currentPage: 1,
+      },
+      'I made a mistake, my phone is 555-123-4567'
+    );
+
+    expect(result.updates?.[0]).toMatchObject({
+      fieldId: 'phone',
+      value: '555-123-4567',
+      status: 'complete',
+    });
+    expect(result.issues).toBeUndefined();
   });
 });

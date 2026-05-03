@@ -1,7 +1,7 @@
 import type { Issue, ProfileEntry } from '@/types';
 import { getCheckSummary, runChecks } from './check';
-import { formatFieldPrompt, getFieldById, getFirstIncompleteRequiredField, getNextIncompleteRequiredField } from './modes';
-import { answerQuestion, inferRelatedQuestion } from './qa';
+import { formatFieldPrompt, getAllFields, getFieldById, getFirstIncompleteRequiredField, getNextIncompleteRequiredField } from './modes';
+import { answerQuestion, bestMatchingField, extractPageReference, fieldsForPage, inferRelatedQuestion } from './qa';
 
 interface AssistantState {
   formSchema: Parameters<typeof getFirstIncompleteRequiredField>[0]['formSchema'];
@@ -9,6 +9,7 @@ interface AssistantState {
   documentStatusMap: Record<string, 'needed' | 'present'>;
   selectedDemoFormId: string | null;
   currentFieldId: string | null;
+  currentPage: number;
 }
 
 export interface AssistantResult {
@@ -24,6 +25,7 @@ const UNSURE_RE = /^(not sure|i'?m not sure|unknown|skip|maybe|unsure|i don'?t k
 const HELP_RE = /\b(help|what can you do|how does this work|walk me through|guide me|start over|continue)\b/i;
 const CHECK_RE = /\b(check|review|scan|inconsisten|mistake|issue|problem)\b/i;
 const QUESTION_RE = /(^|\b)(what|why|where|when|who|how|can|should|do|does|is|are)\b|[?]/i;
+const CORRECTION_RE = /\b(change|update|correct|fix|revise|edit|set|mistake|wrong|actually|should be)\b/i;
 
 function savedFieldText(label: string) {
   const trimmed = label.trim();
@@ -58,6 +60,73 @@ function optionMatch(value: string, options: string[] | undefined) {
   if (!options?.length) return false;
   const normalized = value.toLowerCase();
   return options.some((option) => normalized.includes(option.toLowerCase()));
+}
+
+function stripTrailingPunctuation(value: string) {
+  return value.trim().replace(/[.!?]+$/g, '').trim();
+}
+
+function parseCorrectionParts(input: string) {
+  const trimmed = input.trim();
+  const patterns = [
+    /\b(?:change|update|correct|fix|revise|edit|set)\s+(?:my\s+|the\s+)?(.+?)\s+(?:to|as|is|should be)\s+(.+)$/i,
+    /\b(?:actually|mistake|wrong)\b.*?\b(?:my\s+|the\s+)?(.+?)\s+(?:is|should be|needs to be|to)\s+(.+)$/i,
+    /\b(?:my\s+|the\s+)?(.+?)\s+should be\s+(.+)$/i,
+    /\bmy\s+(.+?)\s+is\s+(.+)$/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = trimmed.match(pattern);
+    if (!match) continue;
+    const target = stripTrailingPunctuation(match[1]);
+    const value = stripTrailingPunctuation(match[2]);
+    if (target && value) return { target, value };
+  }
+
+  return null;
+}
+
+function handleCorrection(state: AssistantState, userText: string): AssistantResult | null {
+  if (!CORRECTION_RE.test(userText)) return null;
+
+  const parts = parseCorrectionParts(userText);
+  if (!parts || !state.formSchema) {
+    return {
+      message: 'I can help change a saved answer. Tell me the field and the new answer, like: "change phone number to 555-123-4567."',
+      nextFieldId: state.currentFieldId,
+    };
+  }
+
+  const referencedPage = extractPageReference(userText, state.currentPage);
+  const candidateFields = referencedPage ? fieldsForPage(state.formSchema, referencedPage) : getAllFields(state.formSchema);
+  const currentField = getFieldById(state.formSchema, state.currentFieldId);
+  const currentFieldTarget =
+    currentField && /\b(this|that|current|current answer|answer)\b/i.test(parts.target)
+      ? currentField
+      : null;
+  const targetField = currentFieldTarget ?? bestMatchingField(candidateFields, parts.target);
+
+  if (!targetField) {
+    const pageText = referencedPage ? ` on page ${referencedPage}` : '';
+    return {
+      message: `I can change that, but I am not sure which field${pageText} you mean. Please name the field and the new answer, like: "change date of birth to 04/12/1976."`,
+      nextFieldId: state.currentFieldId,
+    };
+  }
+
+  const update: ProfileEntry = {
+    fieldId: targetField.id,
+    value: parts.value,
+    status: 'complete',
+    source: 'interview',
+    confidence: 1,
+  };
+
+  return {
+    message: `Updated "${targetField.plainLanguageLabel ?? targetField.label}" to: ${parts.value}.`,
+    updates: [update],
+    nextFieldId: targetField.id,
+  };
 }
 
 function looksLikeAnswerForCurrentField(state: AssistantState, userText: string) {
@@ -209,6 +278,11 @@ export function handleCaseworkerTurn(state: AssistantState, userText: string): A
     };
   }
 
+  const correction = handleCorrection(state, trimmed);
+  if (correction) {
+    return correction;
+  }
+
   if (CHECK_RE.test(trimmed)) {
     const issues = runChecks(state);
     return {
@@ -238,7 +312,7 @@ export function handleCaseworkerTurn(state: AssistantState, userText: string): A
   const relatedQuestion = inferRelatedQuestion(trimmed);
   if (relatedQuestion) {
     return {
-      message: answerQuestion(state, relatedQuestion),
+      message: answerQuestion(state, `${relatedQuestion} ${trimmed}`),
       nextFieldId: currentField?.id ?? null,
     };
   }
