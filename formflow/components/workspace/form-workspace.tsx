@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { AssistantPanel } from '@/components/assistant/assistant-panel';
 import { getCheckSummary, runChecks } from '@/lib/assistant/check';
@@ -15,6 +16,18 @@ import {
 } from '@/store/selectors';
 import type { ChatMessage, FormField, ProfileEntry, UploadKind } from '@/types';
 import { FormControlPanel } from './form-control-panel';
+
+function subscribeToHydrationStore() {
+  return () => {};
+}
+
+function getClientHydrationSnapshot() {
+  return true;
+}
+
+function getServerHydrationSnapshot() {
+  return false;
+}
 
 function makeMessage(role: ChatMessage['role'], content: string): ChatMessage {
   const id =
@@ -32,6 +45,11 @@ function makeMessage(role: ChatMessage['role'], content: string): ChatMessage {
 export function FormWorkspace() {
   const router = useRouter();
   const state = useFormStore();
+  const hydrated = React.useSyncExternalStore(
+    subscribeToHydrationStore,
+    getClientHydrationSnapshot,
+    getServerHydrationSnapshot
+  );
   const completionPercentage = getCompletionPercentage(state);
   const currentSection = getCurrentSection(state);
   const remainingRequiredFields = getRemainingRequiredFields(state);
@@ -146,6 +164,34 @@ export function FormWorkspace() {
         'system',
         `Manual response updated: ${field.plainLanguageLabel ?? field.label} = ${value}`
       )
+    );
+  }
+
+  if (!hydrated) {
+    return (
+      <main
+        className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden lg:grid-cols-2"
+        aria-busy="true"
+      >
+        <aside className="flex min-h-0 flex-1 flex-col border-r bg-background">
+          <div className="border-b p-3">
+            <div className="h-9 rounded-md bg-muted" />
+          </div>
+          <div className="flex-1 bg-secondary/20 p-4">
+            <div className="rounded-xl bg-card p-4 ring-1 ring-border/40">
+              <div className="h-4 w-24 rounded bg-muted" />
+              <div className="mt-3 h-6 w-40 rounded bg-muted" />
+            </div>
+          </div>
+        </aside>
+        <section className="flex min-h-0 flex-1 flex-col border-l bg-background">
+          <div className="border-b p-4">
+            <div className="h-6 w-40 rounded bg-muted" />
+            <div className="mt-3 h-4 w-72 rounded bg-muted" />
+          </div>
+          <div className="flex-1" />
+        </section>
+      </main>
     );
   }
 
