@@ -141,12 +141,9 @@ export default function HomePage() {
         >
           FormFlow<span className="text-muted-foreground">.</span>
         </span>
-        <button
-          onClick={() => setShowUpload(true)}
-          className="inline-flex h-14 items-center gap-1.5 rounded-full bg-primary px-9 text-base font-semibold text-primary-foreground transition-all hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
-          Upload PDF
-        </button>
+        <span className="inline-flex h-9 items-center rounded-full border border-border bg-secondary/50 px-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Beta
+        </span>
       </nav>
 
       <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
@@ -170,7 +167,7 @@ export default function HomePage() {
             <ProcessingSteps currentStep={processingStep} />
           </div>
         ) : (
-          <div className="flex w-full flex-col items-center gap-10">
+          <div className="-mt-8 flex w-full flex-col items-center gap-10">
             <HeroSection
               onTryDemo={handleTryDemo}
               onUploadClick={() => setShowUpload(true)}
