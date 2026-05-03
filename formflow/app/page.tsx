@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { HeroSection } from '@/components/landing/hero-section';
 import { UploadZone } from '@/components/landing/upload-zone';
@@ -135,12 +136,13 @@ export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <nav className="flex items-center justify-between px-8 py-5">
-        <span
-          className="text-4xl font-semibold text-foreground"
+        <Link
+          href="/"
+          className="text-4xl font-semibold text-foreground transition-colors hover:text-foreground/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           style={{ fontFamily: 'var(--font-heading, serif)' }}
         >
           FormFlow<span className="text-muted-foreground">.</span>
-        </span>
+        </Link>
         <span className="inline-flex h-9 items-center rounded-full border border-border bg-secondary/50 px-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Beta
         </span>
