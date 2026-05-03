@@ -12,7 +12,7 @@ export function AnswerPacketPreview({ packet }: AnswerPacketPreviewProps) {
 
   return (
     <section className="min-h-0 flex-1 overflow-auto bg-muted/35 p-4">
-      <div className="mb-4 rounded-xl bg-card p-4 shadow-md shadow-foreground/10 ring-1 ring-border/30">
+      <div className="mb-4 rounded-xl bg-secondary/60 p-4 ring-1 ring-border/40">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Answer packet</p>
         <h2 className="mt-1 text-xl font-semibold text-foreground">{packet.title}</h2>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -32,9 +32,9 @@ export function AnswerPacketPreview({ packet }: AnswerPacketPreviewProps) {
         {packet.sections.map((section) => (
           <div
             key={section.id}
-            className="overflow-hidden rounded-xl bg-card shadow-md shadow-foreground/10 ring-1 ring-border/30"
+            className="overflow-hidden rounded-xl bg-secondary/60 ring-1 ring-border/40"
           >
-            <div className="flex items-center justify-between gap-3 border-b border-border/60 bg-card px-4 py-3">
+            <div className="flex items-center justify-between gap-3 border-b border-border/60 px-4 py-3">
               <h3 className="text-sm font-semibold text-foreground">{section.title}</h3>
               <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-muted-foreground">
                 {section.answers.length}/{section.answers.length + section.missing.length}
@@ -42,7 +42,7 @@ export function AnswerPacketPreview({ packet }: AnswerPacketPreviewProps) {
             </div>
 
             {section.answers.length > 0 && (
-              <dl className="divide-y divide-border/60">
+              <dl className="divide-y divide-border/60 bg-card">
                 {section.answers.map((answer) => (
                   <div key={answer.fieldId} className="grid gap-1 px-4 py-3">
                     <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -55,11 +55,11 @@ export function AnswerPacketPreview({ packet }: AnswerPacketPreviewProps) {
             )}
 
             {section.answers.length === 0 && section.missing.length === 0 && (
-              <p className="px-4 py-3 text-sm text-muted-foreground">No guided fields in this section.</p>
+              <p className="bg-card px-4 py-3 text-sm text-muted-foreground">No guided fields in this section.</p>
             )}
 
             {section.missing.length > 0 && (
-              <div className="border-t border-border/60 bg-secondary/70 px-4 py-3">
+              <div className="border-t border-border/60 bg-secondary px-4 py-3">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Still needed</p>
                 <ul className="mt-2 flex flex-col gap-1 text-sm text-muted-foreground">
                   {section.missing.map((item) => (
@@ -74,7 +74,7 @@ export function AnswerPacketPreview({ packet }: AnswerPacketPreviewProps) {
           </div>
         ))}
 
-        <div className="rounded-xl bg-card p-4 shadow-md shadow-foreground/10 ring-1 ring-border/30">
+        <div className="rounded-xl bg-secondary/60 p-4 ring-1 ring-border/40">
           <h3 className="text-sm font-semibold text-foreground">Documents</h3>
           <div className="mt-3 grid gap-3">
             <div>
@@ -92,7 +92,7 @@ export function AnswerPacketPreview({ packet }: AnswerPacketPreviewProps) {
           </div>
         </div>
 
-        <div className="rounded-xl bg-card p-4 shadow-md shadow-foreground/10 ring-1 ring-border/30">
+        <div className="rounded-xl bg-secondary/60 p-4 ring-1 ring-border/40">
           <h3 className="text-sm font-semibold text-foreground">Issues</h3>
           {packet.issues.length === 0 ? (
             <p className="mt-2 rounded-lg bg-secondary/60 px-3 py-2 text-sm text-muted-foreground">
@@ -101,7 +101,7 @@ export function AnswerPacketPreview({ packet }: AnswerPacketPreviewProps) {
           ) : (
             <ul className="mt-3 flex flex-col gap-3 text-sm text-muted-foreground">
               {packet.issues.map((issue) => (
-                <li key={issue.id} className="rounded-lg bg-secondary/70 px-3 py-2">
+                <li key={issue.id} className="rounded-lg bg-card px-3 py-2">
                   <p className="font-medium leading-6 text-foreground">{issue.message}</p>
                   <p className="mt-1 leading-6">{issue.suggestion}</p>
                 </li>
