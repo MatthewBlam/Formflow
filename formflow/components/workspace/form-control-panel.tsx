@@ -35,6 +35,9 @@ function uploadKindLabel(kind: UploadKind, confidence: number) {
   return `${kind === 'filled' ? 'Filled' : 'Blank'} PDF ${Math.round(confidence * 100)}%`;
 }
 
+const panelTabClassName =
+  'rounded-md px-2 text-xs data-active:bg-primary data-active:text-primary-foreground sm:text-sm';
+
 export function FormControlPanel({
   schema,
   selectedDemoFormId,
@@ -60,19 +63,19 @@ export function FormControlPanel({
       <Tabs defaultValue="status" className="flex min-h-0 flex-1 flex-col gap-0">
         <div className="border-b p-3">
           <TabsList className="grid h-auto w-full grid-cols-5 rounded-md">
-            <TabsTrigger value="source" className="rounded-md px-2 text-xs sm:text-sm">
+            <TabsTrigger value="source" className={panelTabClassName}>
               Source
             </TabsTrigger>
-            <TabsTrigger value="status" className="rounded-md px-2 text-xs sm:text-sm">
+            <TabsTrigger value="status" className={panelTabClassName}>
               Status
             </TabsTrigger>
-            <TabsTrigger value="packet" className="rounded-md px-2 text-xs sm:text-sm">
+            <TabsTrigger value="packet" className={panelTabClassName}>
               Packet
             </TabsTrigger>
-            <TabsTrigger value="responses" className="rounded-md px-2 text-xs sm:text-sm">
+            <TabsTrigger value="responses" className={panelTabClassName}>
               Edit
             </TabsTrigger>
-            <TabsTrigger value="pdf" className="rounded-md px-2 text-xs sm:text-sm">
+            <TabsTrigger value="pdf" className={panelTabClassName}>
               PDF
             </TabsTrigger>
           </TabsList>
