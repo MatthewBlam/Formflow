@@ -26,6 +26,12 @@ export function ChatComposer({ disabled, onSend }: ChatComposerProps) {
         <Textarea
           value={value}
           onChange={(event) => setValue(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+              event.preventDefault();
+              send();
+            }
+          }}
           placeholder="Type your answer or question..."
           rows={3}
           disabled={disabled}

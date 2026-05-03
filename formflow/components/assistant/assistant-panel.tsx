@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { CheckCircle2 } from 'lucide-react';
 import type { ChatMessage } from '@/types';
 import { Button } from '@/components/ui/button';
 import { useFormStore } from '@/store/form-store';
@@ -58,8 +57,7 @@ export function AssistantPanel() {
       <div className="border-b p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-medium uppercase text-muted-foreground">Caseworker chat</p>
-            <h2 className="text-xl font-semibold text-foreground">BridgeForm assistant</h2>
+            <h2 className="text-xl font-semibold text-foreground">Caseworker chat</h2>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">
               Ask questions, answer fields, or ask for help at any point.
             </p>
@@ -72,8 +70,7 @@ export function AssistantPanel() {
             disabled={!state.formSchema}
             className="rounded-md"
           >
-            <CheckCircle2 className="h-4 w-4" />
-            Check
+            Check My Responses
           </Button>
         </div>
       </div>
