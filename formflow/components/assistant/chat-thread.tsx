@@ -32,7 +32,7 @@ export function ChatThread({ messages }: ChatThreadProps) {
             className={`max-w-[86%] rounded-md px-3 py-2 text-sm leading-6 ${
               message.role === 'user'
                 ? 'ml-auto bg-primary text-primary-foreground'
-                : 'mr-auto bg-card text-card-foreground shadow-sm ring-1 ring-border/35'
+                : 'mr-auto bg-card text-card-foreground shadow-md shadow-foreground/10 ring-1 ring-border/30'
             }`}
           >
             {message.content.split('\n').map((line, index) => (
