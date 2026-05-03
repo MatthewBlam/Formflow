@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { AssistantPanel } from '@/components/assistant/assistant-panel';
 import { getCheckSummary, runChecks } from '@/lib/assistant/check';
+import { getCachedExtraction, readPdfFile, saveCachedExtraction } from '@/lib/extraction-cache';
 import { getDefaultDemoForm, getDemoForm } from '@/lib/forms/registry';
 import { useFormStore } from '@/store/form-store';
 import {
@@ -26,11 +27,6 @@ function makeMessage(role: ChatMessage['role'], content: string): ChatMessage {
     content,
     createdAt: new Date().toISOString(),
   };
-}
-
-async function fileToBase64(file: File) {
-  const arrayBuffer = await file.arrayBuffer();
-  return btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
 }
 
 export function FormWorkspace() {
@@ -71,11 +67,27 @@ export function FormWorkspace() {
     state.setChatMessages([makeMessage('assistant', 'Reading the uploaded PDF and preparing guidance...')]);
 
     try {
-      const pdfBase64 = await fileToBase64(file);
+      const pdfRead = await readPdfFile(file);
+      const cached = getCachedExtraction(pdfRead.documentHash);
+      if (cached) {
+        state.setFormSchema(cached.schema);
+        state.setUploadKind(cached.uploadKind, cached.uploadKindConfidence);
+        state.setExtractionStatus('complete');
+        const mode = cached.uploadKind === 'filled' ? 'check' : cached.uploadKind === 'blank' ? 'walkthrough' : 'qa';
+        state.setActiveMode(mode);
+        state.setChatMessages([
+          makeMessage(
+            'assistant',
+            `Loaded cached guidance for ${cached.fileName}. I can walk through the required fields, answer questions, or check existing answers.`
+          ),
+        ]);
+        return;
+      }
+
       const response = await fetch('/api/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pdfUrl: blobUrl, pdfBase64 }),
+        body: JSON.stringify({ pdfUrl: blobUrl, pdfBase64: pdfRead.base64 }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? `Extract failed: ${response.status}`);
@@ -84,6 +96,16 @@ export function FormWorkspace() {
       const confidence = typeof body.uploadKindConfidence === 'number' ? body.uploadKindConfidence : 0;
       state.setFormSchema(body.schema);
       state.setUploadKind(kind, confidence);
+      saveCachedExtraction({
+        documentHash: pdfRead.documentHash,
+        fileName: file.name,
+        fileSize: file.size,
+        lastModified: file.lastModified,
+        cachedAt: new Date().toISOString(),
+        schema: body.schema,
+        uploadKind: kind,
+        uploadKindConfidence: confidence,
+      });
       state.setExtractionStatus('complete');
       const mode = kind === 'filled' ? 'check' : kind === 'blank' ? 'walkthrough' : 'qa';
       state.setActiveMode(mode);

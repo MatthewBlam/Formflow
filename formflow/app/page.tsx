@@ -5,6 +5,12 @@ import { useRouter } from 'next/navigation';
 import { HeroSection } from '@/components/landing/hero-section';
 import { UploadZone } from '@/components/landing/upload-zone';
 import { ProcessingSteps } from '@/components/landing/processing-steps';
+import {
+  getCachedExtraction,
+  readPdfFile,
+  saveCachedExtraction,
+  type PdfReadResult,
+} from '@/lib/extraction-cache';
 import { useFormStore } from '@/store/form-store';
 import { getDefaultDemoForm } from '@/lib/forms/registry';
 import type { ChatMessage, UploadKind } from '@/types';
@@ -39,7 +45,7 @@ export default function HomePage() {
   } = useFormStore();
   const stepTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  async function runExtraction(pdfUrl: string, pdfBase64?: string) {
+  async function runExtraction(pdfUrl: string, pdfFile?: File, pdfRead?: PdfReadResult) {
     resetSession();
     setPdfUrl(pdfUrl);
     setSelectedDemoFormId(null);
@@ -53,7 +59,7 @@ export default function HomePage() {
       const res = await fetch('/api/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pdfBase64 ? { pdfUrl, pdfBase64 } : { pdfUrl }),
+        body: JSON.stringify(pdfRead ? { pdfUrl, pdfBase64: pdfRead.base64 } : { pdfUrl }),
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? `Extract failed: ${res.status}`);
@@ -62,6 +68,19 @@ export default function HomePage() {
       setFormSchema(schema);
       setUploadKind(uploadKind, typeof body.uploadKindConfidence === 'number' ? body.uploadKindConfidence : 0);
       setActiveMode(uploadKind === 'filled' ? 'check' : uploadKind === 'blank' ? 'walkthrough' : 'qa');
+      if (pdfFile && pdfRead) {
+        saveCachedExtraction({
+          documentHash: pdfRead.documentHash,
+          fileName: pdfFile.name,
+          fileSize: pdfFile.size,
+          lastModified: pdfFile.lastModified,
+          cachedAt: new Date().toISOString(),
+          schema,
+          uploadKind,
+          uploadKindConfidence:
+            typeof body.uploadKindConfidence === 'number' ? body.uploadKindConfidence : 0,
+        });
+      }
       setExtractionStatus('complete');
       router.push('/form');
     } catch (err) {
@@ -91,9 +110,28 @@ export default function HomePage() {
 
   async function handleFile(file: File) {
     const blobUrl = URL.createObjectURL(file);
-    const arrayBuffer = await file.arrayBuffer();
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-    runExtraction(blobUrl, base64);
+    const pdfRead = await readPdfFile(file);
+    const cached = getCachedExtraction(pdfRead.documentHash);
+
+    if (cached) {
+      resetSession();
+      setPdfUrl(blobUrl);
+      setSelectedDemoFormId(null);
+      setFormSchema(cached.schema);
+      setUploadKind(cached.uploadKind, cached.uploadKindConfidence);
+      setActiveMode(cached.uploadKind === 'filled' ? 'check' : cached.uploadKind === 'blank' ? 'walkthrough' : 'qa');
+      setExtractionStatus('complete');
+      setChatMessages([
+        makeMessage(
+          'assistant',
+          `Loaded cached guidance for ${cached.fileName}. I can walk through the required fields, answer questions, or check existing answers.`
+        ),
+      ]);
+      router.push('/form');
+      return;
+    }
+
+    runExtraction(blobUrl, file, pdfRead);
   }
 
   const isProcessing = processingStep !== null;

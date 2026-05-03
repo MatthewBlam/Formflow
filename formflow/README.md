@@ -7,6 +7,8 @@ BridgeForm is a Next.js MVP for guided government form completion. The current a
 
 The demo path loads static SAWS 2 PLUS context from `lib/forms/registry.ts` instead of calling live extraction. Uploaded PDFs still use `/api/extract` as a best-effort path and receive a blank/filled/unknown classification.
 
+Uploaded PDF extraction results are cached in browser localStorage by SHA-256 hash of the PDF bytes, so re-uploading the same document can skip the expensive extraction call.
+
 ## Development
 
 Create a local environment file when testing uploads:
@@ -40,4 +42,5 @@ npm run build
 - `components/assistant/*` owns chat, modes, composer, and mode switching.
 - `lib/forms/*` contains deterministic demo form context and check rules.
 - `lib/assistant/*` contains walkthrough, Q&A, check, and answer packet logic.
+- `lib/extraction-cache.ts` fingerprints uploaded PDFs and caches extraction results.
 - `store/form-store.ts` is the persisted Zustand source of truth.
