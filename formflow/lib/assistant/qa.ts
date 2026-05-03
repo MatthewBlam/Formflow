@@ -1,15 +1,84 @@
 import type { FormFlowState } from '@/types';
-import { getAllFields, getSectionForField } from './modes';
+import { getAllFields, getFieldById, getSectionForField } from './modes';
 
-const DOCUMENT_TERMS = ['document', 'proof', 'paper', 'pay stub', 'id', 'address'];
+const DOCUMENT_TERMS = ['document', 'documents', 'proof', 'paper', 'papers', 'pay stub', 'id'];
 const BLANK_TERMS = ['blank', 'skip', 'leave empty', 'required', 'optional'];
+const PROGRAM_TERMS = ['benefit', 'benefits', 'program', 'programs', 'apply for', 'available'];
+const OPTION_TERMS = ['option', 'options', 'choice', 'choices', 'available', 'select', 'choose'];
+const STOP_WORDS = new Set([
+  'about',
+  'apply',
+  'available',
+  'because',
+  'benefits',
+  'could',
+  'does',
+  'field',
+  'form',
+  'from',
+  'have',
+  'need',
+  'question',
+  'should',
+  'that',
+  'this',
+  'want',
+  'what',
+  'which',
+  'with',
+  'your',
+]);
 
 function includesAny(value: string, terms: string[]) {
   return terms.some((term) => value.includes(term));
 }
 
+function words(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter((word) => word.length > 2 && !STOP_WORDS.has(word));
+}
+
+function bestMatchingField(fields: ReturnType<typeof getAllFields>, question: string) {
+  const questionWords = words(question);
+  if (questionWords.length === 0) return null;
+
+  const scored = fields
+    .map((field) => {
+      const fieldWords = new Set(words(`${field.id} ${field.label} ${field.plainLanguageLabel ?? ''}`));
+      const matches = questionWords.filter((word) => fieldWords.has(word)).length;
+      return { field, score: matches / questionWords.length };
+    })
+    .filter(({ score }) => score >= 0.45)
+    .sort((a, b) => b.score - a.score);
+
+  return scored[0]?.field ?? null;
+}
+
+function programField(fields: ReturnType<typeof getAllFields>) {
+  return (
+    fields.find((field) => field.id === 'programs_requested') ??
+    fields.find((field) => /benefits|programs|apply/i.test(`${field.label} ${field.plainLanguageLabel ?? ''}`)) ??
+    null
+  );
+}
+
+function answerFieldContext(
+  state: Pick<FormFlowState, 'formSchema' | 'applicationProfile'>,
+  fieldId: string
+) {
+  const field = getFieldById(state.formSchema, fieldId);
+  if (!field) return null;
+  const section = getSectionForField(state.formSchema, field.id);
+  const entry = state.applicationProfile[field.id];
+  const options = field.options?.length ? ` Options on this form: ${field.options.join(', ')}.` : '';
+  return `${field.plainLanguageLabel ?? field.label}: ${field.whyAsking ?? 'This helps the county review your application.'}${options} Related section: ${section?.title ?? 'Unknown section'}.${entry?.value ? ` Current answer: ${entry.value}.` : ' No answer is saved yet.'}`;
+}
+
 export function answerQuestion(
-  state: Pick<FormFlowState, 'formSchema' | 'applicationProfile' | 'documentStatusMap'>,
+  state: Pick<FormFlowState, 'formSchema' | 'applicationProfile' | 'documentStatusMap' | 'currentFieldId'>,
   question: string
 ) {
   const schema = state.formSchema;
@@ -19,13 +88,26 @@ export function answerQuestion(
 
   const normalized = question.toLowerCase();
   const fields = getAllFields(schema);
-  const matchingField = fields.find((field) => {
-    const haystack = `${field.id} ${field.label} ${field.plainLanguageLabel ?? ''}`.toLowerCase();
-    return normalized
-      .split(/\s+/)
-      .filter((word) => word.length > 3)
-      .some((word) => haystack.includes(word));
-  });
+
+  if (includesAny(normalized, PROGRAM_TERMS)) {
+    const field = programField(fields);
+    const options = field?.options ?? [];
+    if (options.length > 0) {
+      return `This form can be used to ask the county to look at these benefit programs: ${options.join(', ')}. I cannot tell you for sure which ones you qualify for, but you can choose the programs you want the county to evaluate. If you are not sure, it is usually okay to select the programs you want help with and let the county review eligibility.`;
+    }
+    return 'This form is for asking the county to review benefit programs. I can help identify the program choices shown on the form, but I cannot guarantee eligibility.';
+  }
+
+  if (normalized.includes('what form') || normalized.includes('what is this form') || normalized.includes('what does this form')) {
+    const sections = schema.sections.map((section) => section.title).join(', ');
+    return `${schema.title} is a benefits application packet. The guided context I have includes these sections: ${sections}. I can explain any section or help you answer the fields one at a time.`;
+  }
+
+  if (normalized.includes('section') || normalized.includes('fields') || normalized.includes('questions on')) {
+    return `I see ${schema.sections.length} main sections in this guided form context: ${schema.sections
+      .map((section) => section.title)
+      .join(', ')}.`;
+  }
 
   if (includesAny(normalized, DOCUMENT_TERMS)) {
     const docs = schema.documentRequirements ?? [];
@@ -38,13 +120,24 @@ export function answerQuestion(
       .join(', ')}.`;
   }
 
+  const currentFieldQuestion =
+    /\b(this|that|it|current|current question)\b/i.test(question) ||
+    (/^why\b/i.test(question) && state.currentFieldId);
+  if (currentFieldQuestion && state.currentFieldId) {
+    const response = answerFieldContext(state, state.currentFieldId);
+    if (response) return response;
+  }
+
+  const matchingField = bestMatchingField(fields, question);
   if (matchingField) {
-    const section = getSectionForField(schema, matchingField.id);
-    const entry = state.applicationProfile[matchingField.id];
     if (includesAny(normalized, BLANK_TERMS)) {
       return `${matchingField.plainLanguageLabel ?? matchingField.label} is ${matchingField.required ? 'required for this guided packet' : 'optional or situation-dependent'}. ${matchingField.required ? 'If you do not know it, mark it for review instead of guessing.' : 'You can leave it blank if it does not apply.'}`;
     }
-    return `${matchingField.plainLanguageLabel ?? matchingField.label}: ${matchingField.whyAsking ?? 'This helps the county review your application.'} Related section: ${section?.title ?? 'Unknown section'}.${entry?.value ? ` Current answer: ${entry.value}.` : ' No answer is saved yet.'}`;
+    const wantsOptions = includesAny(normalized, OPTION_TERMS);
+    if (wantsOptions && matchingField.options?.length) {
+      return `For "${matchingField.plainLanguageLabel ?? matchingField.label}", the options shown in this guided form context are: ${matchingField.options.join(', ')}.`;
+    }
+    return answerFieldContext(state, matchingField.id)!;
   }
 
   if (normalized.includes('progress') || normalized.includes('missing')) {

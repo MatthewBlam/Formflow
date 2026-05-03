@@ -90,4 +90,22 @@ describe('handleWalkthroughAnswer', () => {
     expect(result.nextFieldId).toBe('applicant_name');
     expect(result.message).toContain('Related section');
   });
+
+  it('answers benefit program questions from form context', () => {
+    const result = handleCaseworkerTurn(
+      {
+        formSchema: saws2PlusForm.schema,
+        applicationProfile: {},
+        documentStatusMap: {},
+        selectedDemoFormId: saws2PlusForm.id,
+        currentFieldId: 'programs_requested',
+      },
+      'can you tell me which benefits I can apply for?'
+    );
+
+    expect(result.updates).toBeUndefined();
+    expect(result.message).toContain('CalFresh');
+    expect(result.message).toContain('Medi-Cal');
+    expect(result.message).toContain('cannot tell you for sure which ones you qualify for');
+  });
 });
