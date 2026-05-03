@@ -1,0 +1,18 @@
+{
+  "enabled": false,
+  "name": "Demo Path Smoke Review",
+  "description": "Checks that the primary FormFlow demo path remains intact — landing page through PDF render, overlays, explainer, interview, and review — whenever demo-critical files change.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "app/form/**",
+      "components/PdfViewer*",
+      "components/Overlay*"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Check whether the primary FormFlow demo path still works: landing page -> Try demo form -> pinned SAWS 2 PLUS PDF renders -> pre-seeded overlays appear -> field click opens explainer -> interview updates status -> issues/checklist/review can be reached. Flag anything that risks the live demo."
+  }
+}

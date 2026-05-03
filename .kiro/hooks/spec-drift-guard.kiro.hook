@@ -1,0 +1,19 @@
+{
+  "enabled": false,
+  "name": "Spec Drift Guard",
+  "description": "Reviews spec and steering file changes to ensure FormFlow MVP stays on track — correct product name, pinned demo form, scoped AI usage, and hackathon-limited scope.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      ".kiro/specs/bridgeform-mvp/requirements.md",
+      ".kiro/specs/bridgeform-mvp/design.md",
+      ".kiro/specs/bridgeform-mvp/tasks.md",
+      ".kiro/steering/formflow-mvp.md"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review this spec or steering change for FormFlow MVP drift. Ensure the product name is FormFlow, the pinned SAWS 2 PLUS demo PDF remains the primary demo form, generic extraction stays best-effort, AI does not own critical state transitions, and scope remains hackathon-limited. If anything conflicts, summarize the issue and suggest the smallest correction."
+  }
+}

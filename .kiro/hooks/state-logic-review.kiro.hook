@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "State Logic Review",
+  "description": "Reviews changes to state, interview, rules, and checklist logic to ensure minimal source-of-truth state, recomputed derived data, schema-driven interview flow, deterministic contradiction detection, and safe AI integration.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "lib/state/**",
+      "lib/interview/**",
+      "lib/rules/**",
+      "lib/checklist/**"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review this state/interview/rules change for FormFlow. Ensure source-of-truth state stays minimal, derived data is recomputed, issues are not stale, interview flow is schema-driven, contradiction detection is deterministic, and AI responses do not directly mutate app state."
+  }
+}

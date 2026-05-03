@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Accessibility Check",
+  "description": "Reviews UI changes for FormFlow accessibility and low-digital-literacy UX standards including plain language, text sizes, keyboard navigation, visible progress, non-color-only statuses, and high contrast.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "components/*.tsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review UI changes for FormFlow accessibility and low-digital-literacy UX. Check plain language, minimum readable text sizes, keyboard navigation, visible progress, non-color-only field statuses, high contrast, and clear guidance-only/privacy copy."
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "Schema Consistency Guard",
+  "description": "Validates FormFlow schema changes to ensure demo fields have required properties and that JSON schemas, TypeScript types, and Zod schemas stay in sync.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "public/schemas/**/*.json",
+      "lib/types/**",
+      "lib/schemas/**"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Validate the FormFlow schema changes against the steering file. Check that demo fields include stable ids, sectionId, questionId/profileKey, bbox percentage coordinates, required/requiredForDemo, evidenceRequired, and prewritten explainer/interview copy where applicable. Flag mismatches between JSON schema, TypeScript types, and Zod schemas."
+  }
+}
