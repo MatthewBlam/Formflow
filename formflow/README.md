@@ -37,7 +37,7 @@ npm run build
 - `app/page.tsx` loads the static demo or processes PDF uploads.
 - `app/form/page.tsx` renders the BridgeForm workspace.
 - `components/workspace/*` owns the left operational pane.
-- `components/assistant/*` owns chat, modes, composer, and manual voice input.
+- `components/assistant/*` owns chat, modes, composer, and mode switching.
 - `lib/forms/*` contains deterministic demo form context and check rules.
 - `lib/assistant/*` contains walkthrough, Q&A, check, and answer packet logic.
 - `store/form-store.ts` is the persisted Zustand source of truth.

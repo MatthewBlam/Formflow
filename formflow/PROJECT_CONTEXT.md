@@ -20,7 +20,7 @@ The app has pivoted from a PDF-first field viewer to a split-screen form assista
 - `lib/forms/saws2plus.ts`: SAWS 2 PLUS static schema, document requirements, and check rules.
 - `lib/assistant/*`: deterministic walkthrough, Q&A, check, and answer packet logic.
 - `components/workspace/*`: left operational workspace.
-- `components/assistant/*`: right assistant panel, chat thread, composer, mode switcher, and manual voice input.
+- `components/assistant/*`: right assistant panel, chat thread, composer, and mode switcher.
 - `components/pdf/*`: retained for optional PDF preview.
 - `app/api/extract/route.ts`: OpenAI extraction fallback for uploaded PDFs, plus blank/filled heuristic.
 
@@ -29,7 +29,7 @@ The app has pivoted from a PDF-first field viewer to a split-screen form assista
 - No eligibility guarantees.
 - No legal advice framing.
 - No recommendation to submit without review.
-- Voice input is manual: user clicks mic, reviews transcript, then confirms before sending.
+- Voice input is not part of the current MVP.
 - Answer packet is a structured UI summary only; it does not write into the PDF.
 
 ## Verification Baseline
