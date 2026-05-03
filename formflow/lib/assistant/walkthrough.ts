@@ -20,6 +20,12 @@ export interface AssistantResult {
   issues?: Issue[];
 }
 
+function savedFieldText(label: string) {
+  const trimmed = label.trim();
+  const punctuation = /[.!?]$/.test(trimmed) ? '' : '.';
+  return `Saved "${trimmed}${punctuation}"`;
+}
+
 export function getInitialAssistantMessage(state: AssistantState): AssistantResult {
   const field = getFirstIncompleteRequiredField(state);
   if (!field) {
@@ -75,7 +81,7 @@ export function handleWalkthroughAnswer(state: AssistantState, userText: string)
   if (!nextField) {
     const issues = runChecks(simulatedState);
     return {
-      message: `Saved ${currentField.plainLanguageLabel ?? currentField.label}. That was the last required guided field. ${getCheckSummary(issues)}`,
+      message: `${savedFieldText(currentField.plainLanguageLabel ?? currentField.label)} That was the last required guided field. ${getCheckSummary(issues)}`,
       updates: [update],
       nextFieldId: null,
       mode: 'check',
@@ -84,7 +90,7 @@ export function handleWalkthroughAnswer(state: AssistantState, userText: string)
   }
 
   return {
-    message: `Saved ${currentField.plainLanguageLabel ?? currentField.label}.\n\nNext: ${formatFieldPrompt(nextField)}`,
+    message: `${savedFieldText(currentField.plainLanguageLabel ?? currentField.label)}\n\nNext: ${formatFieldPrompt(nextField)}`,
     updates: [update],
     nextFieldId: nextField.id,
     mode: 'walkthrough',
