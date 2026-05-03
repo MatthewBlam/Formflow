@@ -1,9 +1,39 @@
 import type { FormFlowState } from '@/types';
 import { getAllFields, getFieldById, getSectionForField } from './modes';
 
-const DOCUMENT_TERMS = ['document', 'documents', 'proof', 'paper', 'papers', 'pay stub', 'id'];
+const DOCUMENT_TERMS = [
+  'document',
+  'documents',
+  'proof',
+  'paper',
+  'papers',
+  'pay stub',
+  'paystub',
+  'id',
+  'bring',
+  'show',
+  'verify',
+];
 const BLANK_TERMS = ['blank', 'skip', 'leave empty', 'required', 'optional'];
-const PROGRAM_TERMS = ['benefit', 'benefits', 'program', 'programs', 'apply for', 'available'];
+const PROGRAM_TERMS = [
+  'benefit',
+  'benefits',
+  'program',
+  'programs',
+  'apply for',
+  'available',
+  'calfresh',
+  'medi-cal',
+  'medical',
+  'food stamps',
+  'food help',
+  'cash aid',
+  'general assistance',
+  'health coverage',
+  'help with food',
+  'help with money',
+  'money help',
+];
 const OPTION_TERMS = ['option', 'options', 'choice', 'choices', 'available', 'select', 'choose'];
 const STOP_WORDS = new Set([
   'about',
@@ -31,6 +61,44 @@ const STOP_WORDS = new Set([
 
 function includesAny(value: string, terms: string[]) {
   return terms.some((term) => value.includes(term));
+}
+
+export function inferRelatedQuestion(input: string) {
+  const normalized = input.toLowerCase();
+
+  if (includesAny(normalized, PROGRAM_TERMS)) {
+    return 'what benefit programs are available on this form?';
+  }
+
+  if (includesAny(normalized, DOCUMENT_TERMS)) {
+    return 'what documents or proof do I need?';
+  }
+
+  if (/\b(missing|left|still need|finish|done|complete|next|todo|to do)\b/i.test(normalized)) {
+    return 'what is still missing?';
+  }
+
+  if (/\b(confused|confusing|understand|explain|mean|means|simple|translate)\b/i.test(normalized)) {
+    return 'can you explain the current question in simple words?';
+  }
+
+  if (/\b(qualify|eligible|eligibility|can i get|do i get|allowed)\b/i.test(normalized)) {
+    return 'can you tell me which benefits I can apply for?';
+  }
+
+  if (/\b(address|where live|mail|homeless|house|apartment)\b/i.test(normalized)) {
+    return 'what address information does this form ask for?';
+  }
+
+  if (/\b(income|job|work|salary|pay|wage|money)\b/i.test(normalized)) {
+    return 'what income information does this form ask for?';
+  }
+
+  if (/\b(family|household|people|kids|children|spouse|member)\b/i.test(normalized)) {
+    return 'what household information does this form ask for?';
+  }
+
+  return null;
 }
 
 function words(value: string) {

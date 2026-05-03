@@ -108,4 +108,37 @@ describe('handleWalkthroughAnswer', () => {
     expect(result.message).toContain('Medi-Cal');
     expect(result.message).toContain('cannot tell you for sure which ones you qualify for');
   });
+
+  it('maps rough benefit words to a useful form-context answer', () => {
+    const result = handleCaseworkerTurn(
+      {
+        formSchema: saws2PlusForm.schema,
+        applicationProfile: {},
+        documentStatusMap: {},
+        selectedDemoFormId: saws2PlusForm.id,
+        currentFieldId: 'programs_requested',
+      },
+      'food help money'
+    );
+
+    expect(result.updates).toBeUndefined();
+    expect(result.message).toContain('CalFresh');
+    expect(result.message).toContain('Medi-Cal');
+  });
+
+  it('maps rough document words before falling back to saving', () => {
+    const result = handleCaseworkerTurn(
+      {
+        formSchema: saws2PlusForm.schema,
+        applicationProfile: {},
+        documentStatusMap: {},
+        selectedDemoFormId: saws2PlusForm.id,
+        currentFieldId: 'applicant_name',
+      },
+      'papers need'
+    );
+
+    expect(result.updates).toBeUndefined();
+    expect(result.message).toContain('document');
+  });
 });

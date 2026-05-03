@@ -1,7 +1,7 @@
 import type { Issue, ProfileEntry } from '@/types';
 import { getCheckSummary, runChecks } from './check';
 import { formatFieldPrompt, getFieldById, getFirstIncompleteRequiredField, getNextIncompleteRequiredField } from './modes';
-import { answerQuestion } from './qa';
+import { answerQuestion, inferRelatedQuestion } from './qa';
 
 interface AssistantState {
   formSchema: Parameters<typeof getFirstIncompleteRequiredField>[0]['formSchema'];
@@ -231,6 +231,14 @@ export function handleCaseworkerTurn(state: AssistantState, userText: string): A
   if (QUESTION_RE.test(trimmed)) {
     return {
       message: answerQuestion(state, trimmed),
+      nextFieldId: currentField?.id ?? null,
+    };
+  }
+
+  const relatedQuestion = inferRelatedQuestion(trimmed);
+  if (relatedQuestion) {
+    return {
+      message: answerQuestion(state, relatedQuestion),
       nextFieldId: currentField?.id ?? null,
     };
   }
