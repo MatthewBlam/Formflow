@@ -49,7 +49,6 @@ export function FormWorkspace() {
     state.setPdfUrl(demo.pdfUrl);
     state.setUploadKind('blank', 1);
     state.setExtractionStatus('complete');
-    state.setActiveMode('walkthrough');
     state.setCurrentFieldId(null);
     state.setChatMessages([
       makeMessage(
@@ -73,8 +72,6 @@ export function FormWorkspace() {
         state.setFormSchema(cached.schema);
         state.setUploadKind(cached.uploadKind, cached.uploadKindConfidence);
         state.setExtractionStatus('complete');
-        const mode = cached.uploadKind === 'filled' ? 'check' : cached.uploadKind === 'blank' ? 'walkthrough' : 'qa';
-        state.setActiveMode(mode);
         state.setChatMessages([
           makeMessage(
             'assistant',
@@ -107,8 +104,6 @@ export function FormWorkspace() {
         uploadKindConfidence: confidence,
       });
       state.setExtractionStatus('complete');
-      const mode = kind === 'filled' ? 'check' : kind === 'blank' ? 'walkthrough' : 'qa';
-      state.setActiveMode(mode);
       if (kind === 'filled') {
         const issues = runChecks({ ...state, formSchema: body.schema });
         state.setCheckIssues(issues);
@@ -123,7 +118,7 @@ export function FormWorkspace() {
         state.setChatMessages([
           makeMessage(
             'assistant',
-            'I could not confidently tell whether this PDF is blank or filled. Use Walkthrough to answer it from scratch, or Check if you already filled it out.'
+            'I could not confidently tell whether this PDF is blank or filled. You can answer fields in chat, ask me questions, or use the Check button if you already filled it out.'
           ),
         ]);
       }

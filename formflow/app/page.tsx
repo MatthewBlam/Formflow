@@ -35,7 +35,6 @@ export default function HomePage() {
   const {
     extractionError,
     resetSession,
-    setActiveMode,
     setChatMessages,
     setExtractionStatus,
     setFormSchema,
@@ -67,7 +66,6 @@ export default function HomePage() {
       const uploadKind = (body.uploadKind ?? 'unknown') as UploadKind;
       setFormSchema(schema);
       setUploadKind(uploadKind, typeof body.uploadKindConfidence === 'number' ? body.uploadKindConfidence : 0);
-      setActiveMode(uploadKind === 'filled' ? 'check' : uploadKind === 'blank' ? 'walkthrough' : 'qa');
       if (pdfFile && pdfRead) {
         saveCachedExtraction({
           documentHash: pdfRead.documentHash,
@@ -97,7 +95,6 @@ export default function HomePage() {
     setFormSchema(demo.schema);
     setPdfUrl(demo.pdfUrl);
     setUploadKind('blank', 1);
-    setActiveMode('walkthrough');
     setExtractionStatus('complete');
     setChatMessages([
       makeMessage(
@@ -119,7 +116,6 @@ export default function HomePage() {
       setSelectedDemoFormId(null);
       setFormSchema(cached.schema);
       setUploadKind(cached.uploadKind, cached.uploadKindConfidence);
-      setActiveMode(cached.uploadKind === 'filled' ? 'check' : cached.uploadKind === 'blank' ? 'walkthrough' : 'qa');
       setExtractionStatus('complete');
       setChatMessages([
         makeMessage(

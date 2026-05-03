@@ -6,7 +6,7 @@ The app has pivoted from a PDF-first field viewer to a split-screen form assista
 
 - `/form` is the main workspace.
 - The left pane handles form source, status, progress, document reminders, answer packet output, and optional PDF preview.
-- The right pane is a deterministic conversational assistant with walkthrough, Q&A, and check modes.
+- The right pane is a conversational caseworker-style assistant for questions, guided answers, and checks.
 - Static demo context drives the SAWS 2 PLUS path. The demo no longer depends on live extraction.
 - Uploaded PDFs still use `/api/extract` as a best-effort fallback and are classified as `blank`, `filled`, or `unknown`.
 - Uploaded PDF extraction results are cached in browser localStorage by SHA-256 document hash.
@@ -19,10 +19,10 @@ The app has pivoted from a PDF-first field viewer to a split-screen form assista
 - `store/selectors.ts`: derived progress, issues, remaining fields, current section, and answer packet.
 - `lib/forms/registry.ts`: static demo form registry.
 - `lib/forms/saws2plus.ts`: SAWS 2 PLUS static schema, document requirements, and check rules.
-- `lib/assistant/*`: deterministic walkthrough, Q&A, check, and answer packet logic.
+- `lib/assistant/*`: deterministic caseworker chat, field Q&A, check, and answer packet logic.
 - `lib/extraction-cache.ts`: browser-side PDF fingerprinting and extraction-result cache.
 - `components/workspace/*`: left operational workspace.
-- `components/assistant/*`: right assistant panel, chat thread, composer, and mode switcher.
+- `components/assistant/*`: right assistant panel, chat thread, composer, and check action.
 - `components/pdf/*`: retained for optional PDF preview.
 - `app/api/extract/route.ts`: OpenAI extraction fallback for uploaded PDFs, plus blank/filled heuristic.
 

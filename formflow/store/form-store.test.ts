@@ -23,7 +23,6 @@ describe('initial state', () => {
     expect(state.currentPage).toBe(1);
     expect(state.activePanelView).toBeNull();
     expect(state.activeFieldId).toBeNull();
-    expect(state.activeMode).toBe('walkthrough');
     expect(state.selectedDemoFormId).toBeNull();
     expect(state.uploadKind).toBe('unknown');
     expect(state.uploadKindConfidence).toBe(0);
@@ -60,11 +59,6 @@ describe('setActiveFieldId', () => {
 });
 
 describe('assistant workflow state', () => {
-  test('sets active mode', () => {
-    getStore().setActiveMode('qa');
-    expect(getStore().activeMode).toBe('qa');
-  });
-
   test('sets selected demo form id', () => {
     getStore().setSelectedDemoFormId('saws2plus');
     expect(getStore().selectedDemoFormId).toBe('saws2plus');

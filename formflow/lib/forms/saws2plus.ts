@@ -374,7 +374,7 @@ function requiredMissingRule({
         type: 'missing_required',
         fieldIds: [field.id],
         message: `${field.plainLanguageLabel ?? field.label} is still needed in ${section.title}.`,
-        suggestion: 'Answer this in walkthrough mode, or mark it for review if you are not sure.',
+        suggestion: 'Answer this in chat, or mark it for review if you are not sure.',
         severity: 'warning' as const,
       }))
   );

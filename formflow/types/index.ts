@@ -4,8 +4,6 @@ export type FieldStatus = 'missing' | 'complete' | 'needs_confirmation' | 'infer
 
 export type AnswerSource = 'interview' | 'inferred' | 'imported';
 
-export type AssistantMode = 'walkthrough' | 'qa' | 'check';
-
 export type UploadKind = 'blank' | 'filled' | 'unknown';
 
 export type ChatRole = 'user' | 'assistant' | 'system';
@@ -92,7 +90,6 @@ export interface FormFlowState {
   currentPage: number;
   activePanelView: 'explainer' | 'interview' | 'checklist' | 'review' | null;
   activeFieldId: string | null;
-  activeMode: AssistantMode;
   selectedDemoFormId: string | null;
   uploadKind: UploadKind;
   uploadKindConfidence: number;
@@ -104,7 +101,6 @@ export interface FormFlowState {
   setCurrentFieldId: (id: string | null) => void;
   setCurrentPage: (page: number) => void;
   setActivePanelView: (view: 'explainer' | 'interview' | 'checklist' | 'review' | null) => void;
-  setActiveMode: (mode: AssistantMode) => void;
   setSelectedDemoFormId: (id: string | null) => void;
   setUploadKind: (kind: UploadKind, confidence?: number) => void;
   addChatMessage: (message: ChatMessage) => void;

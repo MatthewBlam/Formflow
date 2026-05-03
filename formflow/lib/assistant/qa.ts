@@ -50,7 +50,7 @@ export function answerQuestion(
   if (normalized.includes('progress') || normalized.includes('missing')) {
     const missing = fields.filter((field) => field.required && !state.applicationProfile[field.id]?.value.trim());
     if (missing.length === 0) {
-      return 'No required guided fields are missing. Use check mode to review documents and consistency issues.';
+      return 'No required guided fields are missing. Use the Check button to review documents and consistency issues.';
     }
     return `You still need ${missing.length} required answer${missing.length === 1 ? '' : 's'}. Next missing field: ${missing[0].plainLanguageLabel ?? missing[0].label}.`;
   }

@@ -3,7 +3,7 @@
 BridgeForm is a Next.js MVP for guided government form completion. The current app centers on `/form`, with a split workspace:
 
 - Left: form source selection, upload status, progress, document status, answer packet, and optional PDF preview.
-- Right: deterministic assistant with walkthrough, Q&A, and check modes.
+- Right: conversational caseworker-style assistant for questions, guided answers, and checks.
 
 The demo path loads static SAWS 2 PLUS context from `lib/forms/registry.ts` instead of calling live extraction. Uploaded PDFs still use `/api/extract` as a best-effort path and receive a blank/filled/unknown classification.
 
@@ -39,8 +39,8 @@ npm run build
 - `app/page.tsx` loads the static demo or processes PDF uploads.
 - `app/form/page.tsx` renders the BridgeForm workspace.
 - `components/workspace/*` owns the left operational pane.
-- `components/assistant/*` owns chat, modes, composer, and mode switching.
+- `components/assistant/*` owns chat, composer, and the check action.
 - `lib/forms/*` contains deterministic demo form context and check rules.
-- `lib/assistant/*` contains walkthrough, Q&A, check, and answer packet logic.
+- `lib/assistant/*` contains caseworker chat, field Q&A, check, and answer packet logic.
 - `lib/extraction-cache.ts` fingerprints uploaded PDFs and caches extraction results.
 - `store/form-store.ts` is the persisted Zustand source of truth.
