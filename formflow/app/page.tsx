@@ -133,33 +133,66 @@ export default function HomePage() {
   const isProcessing = processingStep !== null;
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-12 bg-background px-6 py-24">
-      {isProcessing ? (
-        <div className="flex flex-col items-center gap-8">
-          <h2 className="text-xl font-semibold text-foreground">Processing your form…</h2>
-          <ProcessingSteps currentStep={processingStep} />
-        </div>
-      ) : (
-        <>
-          <HeroSection
-            onTryDemo={handleTryDemo}
-            onUploadClick={() => setShowUpload(true)}
-          />
-          {extractionError && (
-            <div
-              role="alert"
-              className="max-w-2xl rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-            >
-              {extractionError}
+    <div className="flex min-h-screen flex-col bg-background">
+      <nav className="flex items-center justify-between px-8 py-5">
+        <span
+          className="text-4xl font-semibold text-foreground"
+          style={{ fontFamily: 'var(--font-heading, serif)' }}
+        >
+          FormFlow<span className="text-muted-foreground">.</span>
+        </span>
+        <button
+          onClick={() => setShowUpload(true)}
+          className="inline-flex h-14 items-center gap-1.5 rounded-full bg-primary px-9 text-base font-semibold text-primary-foreground transition-all hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          Upload PDF
+        </button>
+      </nav>
+
+      <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
+        {isProcessing ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-10 py-16">
+            <div className="relative flex items-center justify-center">
+              <div className="size-24 rounded-full border-4 border-border" />
+              <div className="absolute size-24 animate-spin rounded-full border-4 border-primary border-t-transparent" />
             </div>
-          )}
-          {showUpload && (
-            <div className="w-full max-w-md">
-              <UploadZone onFile={handleFile} />
+
+            <div className="flex flex-col items-center gap-2 text-center">
+              <h2
+                className="text-4xl font-normal text-foreground"
+                style={{ fontFamily: 'var(--font-heading, serif)' }}
+              >
+                Processing your form
+              </h2>
+              <p className="text-base text-muted-foreground">This usually takes 10-20 seconds</p>
             </div>
-          )}
-        </>
-      )}
-    </main>
+
+            <ProcessingSteps currentStep={processingStep} />
+          </div>
+        ) : (
+          <div className="flex w-full flex-col items-center gap-10">
+            <HeroSection
+              onTryDemo={handleTryDemo}
+              onUploadClick={() => setShowUpload(true)}
+            />
+
+            {extractionError && (
+              <div
+                role="alert"
+                className="max-w-2xl rounded-xl border border-destructive/40 bg-destructive/10 px-5 py-4 text-sm text-destructive"
+              >
+                {extractionError}
+              </div>
+            )}
+
+            {showUpload && (
+              <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300">
+                <UploadZone onFile={handleFile} />
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+    </div>
   );
 }
