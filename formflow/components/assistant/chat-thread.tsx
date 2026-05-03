@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import type { ChatMessage } from '@/types';
 
 interface ChatThreadProps {
@@ -7,6 +8,14 @@ interface ChatThreadProps {
 }
 
 export function ChatThread({ messages }: ChatThreadProps) {
+  const bottomRef = React.useRef<HTMLDivElement | null>(null);
+  const visibleMessages = messages.filter((message) => message.role !== 'system');
+  const lastMessageId = visibleMessages.at(-1)?.id;
+
+  React.useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [lastMessageId]);
+
   if (messages.length === 0) {
     return (
       <div className="flex h-full items-center justify-center px-6 text-center text-sm leading-6 text-muted-foreground">
@@ -17,9 +26,7 @@ export function ChatThread({ messages }: ChatThreadProps) {
 
   return (
     <div className="flex flex-col gap-3 p-4">
-      {messages
-        .filter((message) => message.role !== 'system')
-        .map((message) => (
+      {visibleMessages.map((message) => (
           <div
             key={message.id}
             className={`max-w-[86%] rounded-md px-3 py-2 text-sm leading-6 ${
@@ -35,6 +42,7 @@ export function ChatThread({ messages }: ChatThreadProps) {
             ))}
           </div>
         ))}
+      <div ref={bottomRef} aria-hidden="true" />
     </div>
   );
 }
