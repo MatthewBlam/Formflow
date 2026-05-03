@@ -13,7 +13,7 @@ import {
   getCurrentSection,
   getRemainingRequiredFields,
 } from '@/store/selectors';
-import type { ChatMessage, UploadKind } from '@/types';
+import type { ChatMessage, FormField, ProfileEntry, UploadKind } from '@/types';
 import { FormControlPanel } from './form-control-panel';
 
 function makeMessage(role: ChatMessage['role'], content: string): ChatMessage {
@@ -130,9 +130,29 @@ export function FormWorkspace() {
     }
   }
 
+  function saveManualAnswer(field: FormField, value: string) {
+    const update: ProfileEntry = {
+      fieldId: field.id,
+      value,
+      status: 'complete',
+      source: 'interview',
+      confidence: 1,
+    };
+    state.updateProfileEntry(field.id, update);
+    state.setCurrentFieldId(field.id);
+    state.setCurrentPage(field.page);
+    state.addChatMessage(
+      makeMessage(
+        'system',
+        `Manual response updated: ${field.plainLanguageLabel ?? field.label} = ${value}`
+      )
+    );
+  }
+
   return (
     <main className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden lg:grid-cols-2">
       <FormControlPanel
+        schema={state.formSchema}
         selectedDemoFormId={state.selectedDemoFormId}
         uploadKind={state.uploadKind}
         uploadKindConfidence={state.uploadKindConfidence}
@@ -145,9 +165,11 @@ export function FormWorkspace() {
         missingDocumentCount={missingDocumentCount}
         issueCount={issueCount}
         answerPacket={answerPacket}
+        applicationProfile={state.applicationProfile}
         onSelectDemo={loadDemo}
         onUpload={uploadPdf}
         onPageChange={state.setCurrentPage}
+        onSaveManualAnswer={saveManualAnswer}
       />
       <AssistantPanel />
       {!state.formSchema && (

@@ -1,7 +1,7 @@
 import type { Issue, ProfileEntry } from '@/types';
 import { getCheckSummary, runChecks } from './check';
 import { formatFieldPrompt, getAllFields, getFieldById, getFirstIncompleteRequiredField, getNextIncompleteRequiredField } from './modes';
-import { answerQuestion, bestMatchingField, extractPageReference, fieldsForPage, inferRelatedQuestion } from './qa';
+import { answerQuestion, bestMatchingField, extractPageReference, fieldByVisualReference, fieldsForPage, inferRelatedQuestion } from './qa';
 
 interface AssistantState {
   formSchema: Parameters<typeof getFirstIncompleteRequiredField>[0]['formSchema'];
@@ -68,6 +68,12 @@ function stripTrailingPunctuation(value: string) {
 
 function parseCorrectionParts(input: string) {
   const trimmed = input.trim();
+  const currentFieldCorrection = trimmed.match(/\b(?:actually|mistake|wrong)\b.*?\b(?:it|that|this|answer)\s*(?:is|should be|needs to be|to)\s+(.+)$/i);
+  if (currentFieldCorrection?.[1]) {
+    const value = stripTrailingPunctuation(currentFieldCorrection[1]);
+    if (value) return { target: null, value };
+  }
+
   const patterns = [
     /\b(?:change|update|correct|fix|revise|edit|set)\s+(?:my\s+|the\s+)?(.+?)\s+(?:to|as|is|should be)\s+(.+)$/i,
     /\b(?:actually|mistake|wrong)\b.*?\b(?:my\s+|the\s+)?(.+?)\s+(?:is|should be|needs to be|to)\s+(.+)$/i,
@@ -101,10 +107,11 @@ function handleCorrection(state: AssistantState, userText: string): AssistantRes
   const candidateFields = referencedPage ? fieldsForPage(state.formSchema, referencedPage) : getAllFields(state.formSchema);
   const currentField = getFieldById(state.formSchema, state.currentFieldId);
   const currentFieldTarget =
-    currentField && /\b(this|that|current|current answer|answer)\b/i.test(parts.target)
+    currentField && (!parts.target || /\b(this|that|current|current answer|answer|it)\b/i.test(parts.target))
       ? currentField
       : null;
-  const targetField = currentFieldTarget ?? bestMatchingField(candidateFields, parts.target);
+  const visualTarget = fieldByVisualReference(state.formSchema, userText, state.currentPage);
+  const targetField = currentFieldTarget ?? visualTarget ?? bestMatchingField(candidateFields, parts.target ?? userText);
 
   if (!targetField) {
     const pageText = referencedPage ? ` on page ${referencedPage}` : '';

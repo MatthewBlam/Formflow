@@ -232,4 +232,60 @@ describe('handleWalkthroughAnswer', () => {
     });
     expect(result.issues).toBeUndefined();
   });
+
+  it('updates the current field when a correction omits the field name', () => {
+    const result = handleCaseworkerTurn(
+      {
+        formSchema: saws2PlusForm.schema,
+        applicationProfile: {
+          date_of_birth: entry('date_of_birth', '01/01/1980'),
+        },
+        documentStatusMap: {},
+        selectedDemoFormId: saws2PlusForm.id,
+        currentFieldId: 'date_of_birth',
+        currentPage: 1,
+      },
+      'Actually it should be 04/12/1976'
+    );
+
+    expect(result.updates?.[0]).toMatchObject({
+      fieldId: 'date_of_birth',
+      value: '04/12/1976',
+      status: 'complete',
+    });
+  });
+
+  it('answers questions about fields by visual position on a page', () => {
+    const result = handleCaseworkerTurn(
+      {
+        formSchema: saws2PlusForm.schema,
+        applicationProfile: {},
+        documentStatusMap: {},
+        selectedDemoFormId: saws2PlusForm.id,
+        currentFieldId: 'programs_requested',
+        currentPage: 1,
+      },
+      'what is the right field on page 7?'
+    );
+
+    expect(result.updates).toBeUndefined();
+    expect(result.message).toContain('What date did you sign it?');
+  });
+
+  it('answers questions about fields near another field label', () => {
+    const result = handleCaseworkerTurn(
+      {
+        formSchema: saws2PlusForm.schema,
+        applicationProfile: {},
+        documentStatusMap: {},
+        selectedDemoFormId: saws2PlusForm.id,
+        currentFieldId: 'programs_requested',
+        currentPage: 1,
+      },
+      'what is the field under the signature line?'
+    );
+
+    expect(result.updates).toBeUndefined();
+    expect(result.message).toContain('Did you sign the application?');
+  });
 });

@@ -48,6 +48,7 @@ const STOP_WORDS = new Set([
   'from',
   'have',
   'information',
+  'line',
   'need',
   'page',
   'question',
@@ -72,6 +73,7 @@ const STOP_WORDS = new Set([
   'ten',
   'eleven',
   'twelve',
+  'under',
 ]);
 const PAGE_WORDS: Record<string, number> = {
   one: 1,
@@ -87,6 +89,7 @@ const PAGE_WORDS: Record<string, number> = {
   eleven: 11,
   twelve: 12,
 };
+type SpatialRelation = 'above' | 'below' | 'left-of' | 'right-of';
 
 function includesAny(value: string, terms: string[]) {
   return terms.some((term) => value.includes(term));
@@ -178,6 +181,83 @@ export function fieldsForPage(schema: FormSchema, page: number) {
   return getAllFields(schema).filter((field) => field.page === page);
 }
 
+function locationFilteredFields(fields: FormField[], input: string) {
+  const normalized = input.toLowerCase();
+  let candidates = fields;
+
+  if (/\btop\b/.test(normalized)) {
+    candidates = candidates.filter((field) => field.bbox.y < 0.4);
+  }
+  if (/\bbottom\b/.test(normalized)) {
+    candidates = candidates.filter((field) => field.bbox.y > 0.55);
+  }
+  if (/\bleft\b/.test(normalized)) {
+    candidates = candidates.filter((field) => field.bbox.x < 0.45);
+  }
+  if (/\bright\b/.test(normalized)) {
+    candidates = candidates.filter((field) => field.bbox.x > 0.4);
+  }
+
+  return candidates;
+}
+
+function relationFromInput(input: string): SpatialRelation | null {
+  if (/\b(under|below|beneath|after)\b/i.test(input)) return 'below';
+  if (/\b(above|over|before)\b/i.test(input)) return 'above';
+  if (/\b(left of|to the left of)\b/i.test(input)) return 'left-of';
+  if (/\b(right of|to the right of)\b/i.test(input)) return 'right-of';
+  return null;
+}
+
+function fieldDistance(a: FormField, b: FormField) {
+  const ax = a.bbox.x + a.bbox.width / 2;
+  const ay = a.bbox.y + a.bbox.height / 2;
+  const bx = b.bbox.x + b.bbox.width / 2;
+  const by = b.bbox.y + b.bbox.height / 2;
+  return Math.hypot(ax - bx, ay - by);
+}
+
+export function fieldByVisualReference(schema: FormSchema, input: string, currentPage?: number) {
+  const referencedPage = extractPageReference(input, currentPage);
+  const allFields = getAllFields(schema);
+  const pageScopedFields = referencedPage ? fieldsForPage(schema, referencedPage) : allFields;
+  const relation = relationFromInput(input);
+
+  if (relation) {
+    const anchor = bestMatchingField(allFields, input);
+    if (anchor) {
+      const related = allFields
+        .filter((field) => field.id !== anchor.id && field.page === anchor.page)
+        .filter((field) => {
+          if (relation === 'below') return field.bbox.y > anchor.bbox.y;
+          if (relation === 'above') return field.bbox.y < anchor.bbox.y;
+          if (relation === 'left-of') return field.bbox.x < anchor.bbox.x;
+          return field.bbox.x > anchor.bbox.x;
+        })
+        .sort((a, b) => fieldDistance(a, anchor) - fieldDistance(b, anchor));
+      return related[0] ?? anchor;
+    }
+  }
+
+  const locatedFields = locationFilteredFields(pageScopedFields, input);
+  if (locatedFields.length !== pageScopedFields.length) {
+    return (
+      bestMatchingField(locatedFields, input) ??
+      locatedFields.sort((a, b) => {
+        const normalized = input.toLowerCase();
+        if (/\btop\b/.test(normalized) && Math.abs(a.bbox.y - b.bbox.y) > 0.01) return a.bbox.y - b.bbox.y;
+        if (/\bbottom\b/.test(normalized) && Math.abs(a.bbox.y - b.bbox.y) > 0.01) return b.bbox.y - a.bbox.y;
+        if (/\bright\b/.test(normalized) && Math.abs(a.bbox.x - b.bbox.x) > 0.01) return b.bbox.x - a.bbox.x;
+        if (/\bleft\b/.test(normalized) && Math.abs(a.bbox.x - b.bbox.x) > 0.01) return a.bbox.x - b.bbox.x;
+        return 0;
+      })[0] ??
+      null
+    );
+  }
+
+  return null;
+}
+
 function programField(fields: ReturnType<typeof getAllFields>) {
   return (
     fields.find((field) => field.id === 'programs_requested') ??
@@ -228,6 +308,11 @@ export function answerQuestion(
   const fields = getAllFields(schema);
   const referencedPage = extractPageReference(question, state.currentPage);
   const scopedFields = referencedPage ? fieldsForPage(schema, referencedPage) : fields;
+  const visualField = fieldByVisualReference(schema, question, state.currentPage);
+
+  if (visualField && /\b(field|box|line|top|bottom|left|right|under|below|above|over)\b/i.test(question)) {
+    return answerFieldContext(state, visualField.id)!;
+  }
 
   if (includesAny(normalized, PROGRAM_TERMS)) {
     const field = programField(fields);

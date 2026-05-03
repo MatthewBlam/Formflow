@@ -2,13 +2,15 @@
 
 import type { AnswerPacket } from '@/lib/assistant/answer-packet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { FormSection, UploadKind } from '@/types';
+import type { FormField, FormSchema, FormSection, ProfileEntry, UploadKind } from '@/types';
 import { AnswerPacketPreview } from './answer-packet-preview';
 import { FormSourceSelector } from './form-source-selector';
 import { OptionalPdfPreview } from './optional-pdf-preview';
+import { ResponseEditor } from './response-editor';
 import { StatusTracker } from './status-tracker';
 
 interface FormControlPanelProps {
+  schema: FormSchema | null;
   selectedDemoFormId: string | null;
   uploadKind: UploadKind;
   uploadKindConfidence: number;
@@ -21,9 +23,11 @@ interface FormControlPanelProps {
   missingDocumentCount: number;
   issueCount: number;
   answerPacket: AnswerPacket;
+  applicationProfile: Record<string, ProfileEntry>;
   onSelectDemo: (id: string) => void;
   onUpload: (file: File) => void;
   onPageChange: (page: number) => void;
+  onSaveManualAnswer: (field: FormField, value: string) => void;
 }
 
 function uploadKindLabel(kind: UploadKind, confidence: number) {
@@ -32,6 +36,7 @@ function uploadKindLabel(kind: UploadKind, confidence: number) {
 }
 
 export function FormControlPanel({
+  schema,
   selectedDemoFormId,
   uploadKind,
   uploadKindConfidence,
@@ -44,15 +49,17 @@ export function FormControlPanel({
   missingDocumentCount,
   issueCount,
   answerPacket,
+  applicationProfile,
   onSelectDemo,
   onUpload,
   onPageChange,
+  onSaveManualAnswer,
 }: FormControlPanelProps) {
   return (
     <aside className="flex min-h-0 flex-1 flex-col bg-background">
       <Tabs defaultValue="status" className="flex min-h-0 flex-1 flex-col gap-0">
         <div className="border-b p-3">
-          <TabsList className="grid h-auto w-full grid-cols-4 rounded-md">
+          <TabsList className="grid h-auto w-full grid-cols-5 rounded-md">
             <TabsTrigger value="source" className="rounded-md px-2 text-xs sm:text-sm">
               Source
             </TabsTrigger>
@@ -61,6 +68,9 @@ export function FormControlPanel({
             </TabsTrigger>
             <TabsTrigger value="packet" className="rounded-md px-2 text-xs sm:text-sm">
               Packet
+            </TabsTrigger>
+            <TabsTrigger value="responses" className="rounded-md px-2 text-xs sm:text-sm">
+              Edit
             </TabsTrigger>
             <TabsTrigger value="pdf" className="rounded-md px-2 text-xs sm:text-sm">
               PDF
@@ -90,6 +100,14 @@ export function FormControlPanel({
 
         <TabsContent value="packet" className="min-h-0 overflow-auto">
           <AnswerPacketPreview packet={answerPacket} />
+        </TabsContent>
+
+        <TabsContent value="responses" className="min-h-0 overflow-auto">
+          <ResponseEditor
+            schema={schema}
+            applicationProfile={applicationProfile}
+            onSaveAnswer={onSaveManualAnswer}
+          />
         </TabsContent>
 
         <TabsContent value="pdf" className="min-h-0 overflow-auto">
