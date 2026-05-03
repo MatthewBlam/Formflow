@@ -43,7 +43,10 @@ export function PageWalkthrough({
   onSaveAnswer,
   onPageChange,
 }: PageWalkthroughProps) {
-  const [value, setValue] = useState('');
+  const [draftAnswer, setDraftAnswer] = useState<{ fieldId: string | null; value: string }>({
+    fieldId: null,
+    value: '',
+  });
 
   const pageFields = useMemo<PageField[]>(() => {
     if (!schema) return [];
@@ -66,14 +69,12 @@ export function PageWalkthrough({
     }
   }, [activeFieldId, currentField, onSelectField]);
 
-  useEffect(() => {
-    setValue('');
-  }, [currentField?.id]);
+  const value = currentField && draftAnswer.fieldId === currentField.id ? draftAnswer.value : '';
 
   function submitAnswer() {
     if (!currentField || !value.trim()) return;
     onSaveAnswer(currentField.id, value.trim());
-    setValue('');
+    setDraftAnswer({ fieldId: currentField.id, value: '' });
 
     const currentIndex = pageFields.findIndex(({ field }) => field.id === currentField.id);
     const nextField = pageFields
@@ -153,7 +154,9 @@ export function PageWalkthrough({
                 )}
                 <Textarea
                   value={value}
-                  onChange={(event) => setValue(event.target.value)}
+                  onChange={(event) =>
+                    setDraftAnswer({ fieldId: currentField.id, value: event.target.value })
+                  }
                   placeholder="Type your answer..."
                   rows={3}
                   aria-label={currentField.label}

@@ -3,7 +3,7 @@ import path from 'path';
 import { readFile } from 'fs/promises';
 import { pathToFileURL } from 'url';
 import OpenAI from 'openai';
-import type { FormField, FormSchema } from '@/types';
+import type { FormField, FormSchema, UploadKind } from '@/types';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -221,6 +221,11 @@ interface PageDetection {
   candidates: FieldCandidate[];
 }
 
+interface UploadClassification {
+  uploadKind: UploadKind;
+  uploadKindConfidence: number;
+}
+
 interface PageFieldResult {
   candidateId: string;
   id: string;
@@ -404,15 +409,6 @@ function getNearbyLabel(pageItems: PdfTextItem[], page: number, x: number, y: nu
       .join(' ')
       .trim() || `Field on page ${page}`
   );
-}
-
-function getSectionTitle(pageItems: PdfTextItem[], page: number, y: number) {
-  const heading = pageItems
-    .filter((item) => item.page === page && item.y <= y && item.y >= y - 150)
-    .filter((item) => /^\d+[a-z]?\./i.test(item.text) || (item.text === item.text.toUpperCase() && item.text.length > 12))
-    .sort((a, b) => b.y - a.y)[0];
-
-  return heading?.text.replace(/^\d+[a-z]?\.\s*/i, '').trim() || `Page ${page}`;
 }
 
 function isInstructionLike(text: string) {
@@ -1050,6 +1046,38 @@ async function getPdfBase64(pdfUrl?: string, pdfBase64?: string): Promise<string
   return Buffer.from(bytes).toString('base64');
 }
 
+async function classifyUploadKind(pdfBase64: string): Promise<UploadClassification> {
+  try {
+    const items = await extractPdfTextItems(pdfBase64);
+    const texts = items.map((item) => item.text.trim()).filter(Boolean);
+    const joined = texts.join(' ');
+    const hasTemplateSignals = /(application|county|benefits|calfresh|medi-cal|social security|address|income)/i.test(joined);
+    const likelyEnteredValues = texts.filter((text) => {
+      if (text.length < 2 || text.length > 80) return false;
+      if (/^[_\s]+$/.test(text)) return false;
+      if (/^(yes|no|n\/a|none)$/i.test(text)) return true;
+      if (/\b[A-Z][a-z]+ [A-Z][a-z]+\b/.test(text)) return true;
+      if (/\b\d{3}[-.\s]\d{2}[-.\s]\d{4}\b/.test(text)) return true;
+      if (/\b\d{3}[-.\s]\d{3}[-.\s]\d{4}\b/.test(text)) return true;
+      if (/\$ ?\d[\d,]*(\.\d{2})?/.test(text)) return true;
+      if (/\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/.test(text)) return true;
+      return /@/.test(text);
+    });
+
+    if (likelyEnteredValues.length >= 6) {
+      return { uploadKind: 'filled', uploadKindConfidence: 0.74 };
+    }
+
+    if (hasTemplateSignals && likelyEnteredValues.length <= 2) {
+      return { uploadKind: 'blank', uploadKindConfidence: 0.68 };
+    }
+
+    return { uploadKind: 'unknown', uploadKindConfidence: 0.35 };
+  } catch {
+    return { uploadKind: 'unknown', uploadKindConfidence: 0 };
+  }
+}
+
 function getErrorStatus(err: unknown): number {
   const status = (err as { status?: unknown })?.status;
   return typeof status === 'number' && status >= 400 && status <= 599 ? status : 500;
@@ -1087,6 +1115,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const classification = await classifyUploadKind(b64);
     const client = new OpenAI();
     let schema: FormSchema;
     try {
@@ -1102,7 +1131,7 @@ export async function POST(req: NextRequest) {
       schema = await refineFieldBoxes(b64, schema);
     }
 
-    return NextResponse.json({ schema });
+    return NextResponse.json({ schema, ...classification });
   } catch (err) {
     const status = getErrorStatus(err);
     const message = getErrorMessage(err);

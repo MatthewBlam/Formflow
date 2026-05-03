@@ -1,44 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BridgeForm
 
-## Getting Started
+BridgeForm is a Next.js MVP for guided government form completion. The current app centers on `/form`, with a split workspace:
 
-Create a local environment file:
+- Left: form source selection, upload status, progress, document status, answer packet, and optional PDF preview.
+- Right: deterministic assistant with walkthrough, Q&A, and check modes.
+
+The demo path loads static SAWS 2 PLUS context from `lib/forms/registry.ts` instead of calling live extraction. Uploaded PDFs still use `/api/extract` as a best-effort path and receive a blank/filled/unknown classification.
+
+## Development
+
+Create a local environment file when testing uploads:
 
 ```bash
 cp .env.local.example .env.local
 ```
 
-Set `OPENAI_API_KEY` in `.env.local`. The extraction route uses `gpt-4.1-mini` by default for batched page vision labeling; set `OPENAI_EXTRACT_MODEL` if you want to override it. `FORMFLOW_MAX_VISION_PAGES` defaults to `3` so demos stay under low request-per-minute limits; set it to `1` for the safest demo.
+Set `OPENAI_API_KEY` in `.env.local` for `/api/extract`. The demo form does not require an API key.
 
-First, run the development server:
+Run the app:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Run checks:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm test
+npx tsc --noEmit
+npm run lint
+npm run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Key Files
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `app/page.tsx` loads the static demo or processes PDF uploads.
+- `app/form/page.tsx` renders the BridgeForm workspace.
+- `components/workspace/*` owns the left operational pane.
+- `components/assistant/*` owns chat, modes, composer, and manual voice input.
+- `lib/forms/*` contains deterministic demo form context and check rules.
+- `lib/assistant/*` contains walkthrough, Q&A, check, and answer packet logic.
+- `store/form-store.ts` is the persisted Zustand source of truth.

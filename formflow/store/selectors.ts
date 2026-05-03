@@ -1,4 +1,7 @@
 import type { FormFlowState, FieldStatus, Issue } from '@/types';
+import { buildAnswerPacket } from '@/lib/assistant/answer-packet';
+import { runChecks } from '@/lib/assistant/check';
+import { getAllFields, getSectionForField } from '@/lib/assistant/modes';
 
 type FieldStatusMap = Record<string, FieldStatus>;
 type SuggestedNextStep = 'review_issues' | 'add_documents' | 'continue_interview' | 'ready';
@@ -6,18 +9,22 @@ type SuggestedNextStep = 'review_issues' | 'add_documents' | 'continue_interview
 export function getFieldStatusMap(state: FormFlowState): FieldStatusMap {
   if (!state.formSchema) return {};
   const result: FieldStatusMap = {};
+  const conflictingFieldIds = new Set(
+    getIssues(state)
+      .filter((issue) => issue.type === 'contradiction')
+      .flatMap((issue) => issue.fieldIds)
+  );
   for (const section of state.formSchema.sections) {
     for (const field of section.fields) {
       const entry = state.applicationProfile[field.id];
-      result[field.id] = entry ? entry.status : 'missing';
+      result[field.id] = conflictingFieldIds.has(field.id) ? 'conflicting' : entry ? entry.status : 'missing';
     }
   }
   return result;
 }
 
 export function getIssues(state: FormFlowState): Issue[] {
-  void state;
-  return [];
+  return state.checkIssues.length > 0 ? state.checkIssues : runChecks(state);
 }
 
 export function getCompletionPercentage(state: FormFlowState): number {
@@ -33,8 +40,28 @@ export function getCompletionPercentage(state: FormFlowState): number {
   return Math.round((completeCount / requiredFields.length) * 100);
 }
 
+export function getCurrentSection(state: FormFlowState) {
+  return getSectionForField(state.formSchema, state.currentFieldId ?? state.activeFieldId);
+}
+
+export function getRemainingRequiredFields(state: FormFlowState) {
+  return getAllFields(state.formSchema).filter((field) => {
+    if (!field.required) return false;
+    const entry = state.applicationProfile[field.id];
+    return !entry || !entry.value.trim() || entry.status === 'missing';
+  });
+}
+
+export function getCheckIssueCount(state: FormFlowState) {
+  return getIssues(state).length;
+}
+
+export function getAnswerPacket(state: FormFlowState) {
+  return buildAnswerPacket({ ...state, checkIssues: getIssues(state) });
+}
+
 export function getSuggestedNextStep(state: FormFlowState): SuggestedNextStep {
-  if (getIssues(state).length > 0) return 'review_issues';
+  if (getIssues(state).some((issue) => issue.type !== 'missing_required')) return 'review_issues';
 
   const hasNeededDocs = Object.values(state.documentStatusMap).some((s) => s === 'needed');
   if (hasNeededDocs) return 'add_documents';

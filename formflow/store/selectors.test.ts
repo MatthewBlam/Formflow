@@ -53,13 +53,28 @@ function makeState(overrides: Partial<FormFlowState> = {}): FormFlowState {
     currentPage: 1,
     activePanelView: null,
     activeFieldId: null,
+    activeMode: 'walkthrough',
+    selectedDemoFormId: null,
+    uploadKind: 'unknown',
+    uploadKindConfidence: 0,
+    chatMessages: [],
+    currentFieldId: null,
+    checkIssues: [],
     setLanguage: () => {},
     setActiveFieldId: () => {},
+    setCurrentFieldId: () => {},
     setCurrentPage: () => {},
     setActivePanelView: () => {},
+    setActiveMode: () => {},
+    setSelectedDemoFormId: () => {},
+    setUploadKind: () => {},
+    addChatMessage: () => {},
+    setChatMessages: () => {},
+    setCheckIssues: () => {},
     updateProfileEntry: () => {},
     setDocumentStatus: () => {},
     setFormSchema: () => {},
+    resetSession: () => {},
     ...overrides,
   };
 }
@@ -167,21 +182,31 @@ describe('getFieldStatusMap', () => {
 });
 
 describe('getIssues', () => {
-  test('returns empty array (stub until Phase 5)', () => {
+  test('returns missing required issues', () => {
     const state = makeState({ formSchema: makeSchema(['name']) });
-    expect(getIssues(state)).toEqual([]);
+    expect(getIssues(state)).toHaveLength(1);
+    expect(getIssues(state)[0]).toMatchObject({
+      id: 'missing_name',
+      type: 'missing_required',
+    });
   });
 });
 
 describe('getSuggestedNextStep', () => {
   test('returns review_issues when there are issues', () => {
-    // Phase 5 will inject real issues; for now we verify the path by overriding
-    // We test the priority via documentStatusMap + missing fields that would normally
-    // be beaten by issues — for now issues always empty so skip this scenario
-    // and document the expected behavior:
-    // when getIssues returns non-empty → 'review_issues'
-    // (tested via integration once Phase 5 is wired)
-    expect(true).toBe(true);
+    const state = makeState({
+      formSchema: makeSchema(['name']),
+      checkIssues: [
+        {
+          id: 'conflict',
+          type: 'contradiction',
+          fieldIds: ['name'],
+          message: 'Conflict',
+          suggestion: 'Fix it',
+        },
+      ],
+    });
+    expect(getSuggestedNextStep(state)).toBe('review_issues');
   });
 
   test('returns add_documents when required docs are needed', () => {

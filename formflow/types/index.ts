@@ -4,6 +4,19 @@ export type FieldStatus = 'missing' | 'complete' | 'needs_confirmation' | 'infer
 
 export type AnswerSource = 'interview' | 'inferred' | 'imported';
 
+export type AssistantMode = 'walkthrough' | 'qa' | 'check';
+
+export type UploadKind = 'blank' | 'filled' | 'unknown';
+
+export type ChatRole = 'user' | 'assistant' | 'system';
+
+export interface ChatMessage {
+  id: string;
+  role: ChatRole;
+  content: string;
+  createdAt: string;
+}
+
 export interface BoundingBox {
   x: number;
   y: number;
@@ -59,6 +72,7 @@ export interface Issue {
   fieldIds: string[];
   message: string;
   suggestion: string;
+  severity?: 'info' | 'warning' | 'error';
 }
 
 export interface ExplainerContent {
@@ -78,11 +92,26 @@ export interface FormFlowState {
   currentPage: number;
   activePanelView: 'explainer' | 'interview' | 'checklist' | 'review' | null;
   activeFieldId: string | null;
+  activeMode: AssistantMode;
+  selectedDemoFormId: string | null;
+  uploadKind: UploadKind;
+  uploadKindConfidence: number;
+  chatMessages: ChatMessage[];
+  currentFieldId: string | null;
+  checkIssues: Issue[];
   setLanguage: (lang: 'en' | 'es') => void;
   setActiveFieldId: (id: string | null) => void;
+  setCurrentFieldId: (id: string | null) => void;
   setCurrentPage: (page: number) => void;
   setActivePanelView: (view: 'explainer' | 'interview' | 'checklist' | 'review' | null) => void;
+  setActiveMode: (mode: AssistantMode) => void;
+  setSelectedDemoFormId: (id: string | null) => void;
+  setUploadKind: (kind: UploadKind, confidence?: number) => void;
+  addChatMessage: (message: ChatMessage) => void;
+  setChatMessages: (messages: ChatMessage[]) => void;
+  setCheckIssues: (issues: Issue[]) => void;
   updateProfileEntry: (fieldId: string, entry: ProfileEntry) => void;
   setDocumentStatus: (docId: string, status: 'needed' | 'present') => void;
   setFormSchema: (schema: FormSchema | null) => void;
+  resetSession: () => void;
 }

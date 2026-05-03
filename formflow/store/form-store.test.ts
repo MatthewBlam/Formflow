@@ -23,6 +23,13 @@ describe('initial state', () => {
     expect(state.currentPage).toBe(1);
     expect(state.activePanelView).toBeNull();
     expect(state.activeFieldId).toBeNull();
+    expect(state.activeMode).toBe('walkthrough');
+    expect(state.selectedDemoFormId).toBeNull();
+    expect(state.uploadKind).toBe('unknown');
+    expect(state.uploadKindConfidence).toBe(0);
+    expect(state.chatMessages).toEqual([]);
+    expect(state.currentFieldId).toBeNull();
+    expect(state.checkIssues).toEqual([]);
   });
 });
 
@@ -49,6 +56,41 @@ describe('setActiveFieldId', () => {
     getStore().setActiveFieldId('field-name');
     getStore().setActiveFieldId(null);
     expect(getStore().activeFieldId).toBeNull();
+  });
+});
+
+describe('assistant workflow state', () => {
+  test('sets active mode', () => {
+    getStore().setActiveMode('qa');
+    expect(getStore().activeMode).toBe('qa');
+  });
+
+  test('sets selected demo form id', () => {
+    getStore().setSelectedDemoFormId('saws2plus');
+    expect(getStore().selectedDemoFormId).toBe('saws2plus');
+  });
+
+  test('sets upload kind with confidence', () => {
+    getStore().setUploadKind('filled', 0.8);
+    expect(getStore().uploadKind).toBe('filled');
+    expect(getStore().uploadKindConfidence).toBe(0.8);
+  });
+
+  test('adds chat messages', () => {
+    const message = {
+      id: 'm1',
+      role: 'assistant' as const,
+      content: 'Hello',
+      createdAt: '2026-05-02T00:00:00.000Z',
+    };
+    getStore().addChatMessage(message);
+    expect(getStore().chatMessages).toEqual([message]);
+  });
+
+  test('sets current field and active field together', () => {
+    getStore().setCurrentFieldId('applicant_name');
+    expect(getStore().currentFieldId).toBe('applicant_name');
+    expect(getStore().activeFieldId).toBe('applicant_name');
   });
 });
 

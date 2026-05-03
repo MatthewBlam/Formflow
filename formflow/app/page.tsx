@@ -6,17 +6,43 @@ import { HeroSection } from '@/components/landing/hero-section';
 import { UploadZone } from '@/components/landing/upload-zone';
 import { ProcessingSteps } from '@/components/landing/processing-steps';
 import { useFormStore } from '@/store/form-store';
-import { DEMO_PDF_URL } from '@/lib/constants';
+import { getDefaultDemoForm } from '@/lib/forms/registry';
+import type { ChatMessage, UploadKind } from '@/types';
+
+function makeMessage(role: ChatMessage['role'], content: string): ChatMessage {
+  const id =
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return {
+    id,
+    role,
+    content,
+    createdAt: new Date().toISOString(),
+  };
+}
 
 export default function HomePage() {
   const router = useRouter();
   const [showUpload, setShowUpload] = useState(false);
   const [processingStep, setProcessingStep] = useState<number | null>(null);
-  const { extractionError, setExtractionStatus, setFormSchema, setPdfUrl } = useFormStore();
+  const {
+    extractionError,
+    resetSession,
+    setActiveMode,
+    setChatMessages,
+    setExtractionStatus,
+    setFormSchema,
+    setPdfUrl,
+    setSelectedDemoFormId,
+    setUploadKind,
+  } = useFormStore();
   const stepTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   async function runExtraction(pdfUrl: string, pdfBase64?: string) {
+    resetSession();
     setPdfUrl(pdfUrl);
+    setSelectedDemoFormId(null);
     setExtractionStatus('processing');
     setProcessingStep(0);
 
@@ -32,7 +58,10 @@ export default function HomePage() {
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? `Extract failed: ${res.status}`);
       const { schema } = body;
+      const uploadKind = (body.uploadKind ?? 'unknown') as UploadKind;
       setFormSchema(schema);
+      setUploadKind(uploadKind, typeof body.uploadKindConfidence === 'number' ? body.uploadKindConfidence : 0);
+      setActiveMode(uploadKind === 'filled' ? 'check' : uploadKind === 'blank' ? 'walkthrough' : 'qa');
       setExtractionStatus('complete');
       router.push('/form');
     } catch (err) {
@@ -43,7 +72,21 @@ export default function HomePage() {
   }
 
   function handleTryDemo() {
-    runExtraction(DEMO_PDF_URL);
+    const demo = getDefaultDemoForm();
+    resetSession();
+    setSelectedDemoFormId(demo.id);
+    setFormSchema(demo.schema);
+    setPdfUrl(demo.pdfUrl);
+    setUploadKind('blank', 1);
+    setActiveMode('walkthrough');
+    setExtractionStatus('complete');
+    setChatMessages([
+      makeMessage(
+        'assistant',
+        `Loaded ${demo.title}. I can walk through the required fields, answer questions, or check existing answers.`
+      ),
+    ]);
+    router.push('/form');
   }
 
   async function handleFile(file: File) {
