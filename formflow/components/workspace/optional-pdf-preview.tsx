@@ -33,7 +33,7 @@ export function OptionalPdfPreview({ pdfUrl, currentPage, onPageChange, alwaysOp
   if (!pdfUrl) return null;
 
   return (
-    <section>
+    <section className="flex min-h-0 h-full flex-col">
       <div className="flex items-center justify-between gap-3 p-4">
         <div>
           <p className="text-xs font-medium uppercase text-muted-foreground">PDF preview</p>
@@ -47,7 +47,7 @@ export function OptionalPdfPreview({ pdfUrl, currentPage, onPageChange, alwaysOp
         )}
       </div>
       {isOpen && (
-        <div className="border-t">
+        <div className="flex min-h-0 flex-1 flex-col border-t">
           <div className="flex justify-center border-b p-2">
             <PdfControls
               currentPage={currentPage}
@@ -56,7 +56,7 @@ export function OptionalPdfPreview({ pdfUrl, currentPage, onPageChange, alwaysOp
               onNextPage={() => onPageChange(Math.min(totalPages, currentPage + 1))}
             />
           </div>
-          <div className="max-h-[420px] overflow-auto bg-muted/30 p-3">
+          <div className="min-h-0 flex-1 overflow-auto bg-muted/30 p-3 pb-8">
             <div className="mx-auto w-fit">
               <PdfViewer url={pdfUrl} currentPage={currentPage} onLoadSuccess={setTotalPages} />
             </div>

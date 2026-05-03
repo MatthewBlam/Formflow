@@ -131,7 +131,7 @@ export function FormWorkspace() {
   }
 
   return (
-    <main className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[minmax(380px,0.9fr)_minmax(460px,1.1fr)]">
+    <main className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden lg:grid-cols-2">
       <FormControlPanel
         selectedDemoFormId={state.selectedDemoFormId}
         uploadKind={state.uploadKind}
